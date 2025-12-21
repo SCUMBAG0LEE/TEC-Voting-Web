@@ -214,7 +214,7 @@ When the voting end date passes:
 
 ## License
 
-This project is for educational purposes.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
@@ -222,4 +222,4 @@ For issues or questions, please contact the system administrator.
 
 ---
 
-**TEC Online Voting System** © 2025
+**TEC Online Voting System** © 2025 | MIT License
