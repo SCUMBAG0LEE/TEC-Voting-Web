@@ -9,8 +9,8 @@
 
 // Database credentials
 define('DB_HOST', 'localhost');
-define('DB_USER', 'laboran');
-define('DB_PASS', 'lantai10');
+define('DB_USER', 'root');
+define('DB_PASS', '');
 define('DB_NAME', 'voting');
 
 // Create connection

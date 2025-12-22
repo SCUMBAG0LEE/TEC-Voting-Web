@@ -1,0 +1,30 @@
+# Database configuration with real credentials
+includes/db_config.php
+
+# Uploaded photos (user content)
+admin/candidate_photos/*
+!admin/candidate_photos/.gitkeep
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# PHP error logs
+*.log
+error_log
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Backup files
+*.bak
+*.backup
+*.sql.gz

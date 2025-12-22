@@ -104,7 +104,8 @@ CREATE TABLE election_history (
 
 ### 3. Configure Database Connection
 
-Edit `includes/db_config.php` with your database credentials:
+1. Copy `includes/db_config.example.php` to `includes/db_config.php`
+2. Edit `includes/db_config.php` with your database credentials:
 
 ```php
 <?php
@@ -116,6 +117,8 @@ define('DB_NAME', 'voting');
 $con = mysqli_connect(DB_HOST, DB_USER, DB_PASS, DB_NAME);
 ?>
 ```
+
+> ⚠️ **Security Note**: Never commit `db_config.php` with real credentials to version control. The `.gitignore` file is configured to exclude it.
 
 ### 4. Set File Permissions
 
