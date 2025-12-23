@@ -143,13 +143,16 @@ const app = new Elysia()
   })
   
   // Start server
-  .listen(config.server.port);
+  .listen({
+    port: config.server.port,
+    hostname: '0.0.0.0',
+  });
 
 console.log(`
 🗳️  TEC Online Voting API
 
-   Server:      http://localhost:${config.server.port}
-   Swagger:     http://localhost:${config.server.port}/docs
+   Server:      http://0.0.0.0:${config.server.port}
+   Swagger:     http://0.0.0.0:${config.server.port}/docs
    Environment: ${config.server.env}
 `);
 
