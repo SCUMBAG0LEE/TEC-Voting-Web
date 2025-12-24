@@ -8,6 +8,15 @@
 import { query, queryOne, execute } from '../db';
 import type { VotingConfig, VotingStatus } from '../types';
 
+// Convert ISO/Date string to MySQL DATETIME format (UTC)
+function toMySqlDateTime(dateString: string): string {
+  const d = new Date(dateString);
+  if (isNaN(d.getTime())) {
+    throw new Error('Invalid date');
+  }
+  return d.toISOString().slice(0, 19).replace('T', ' ');
+}
+
 /**
  * Get current voting configuration
  */
@@ -65,17 +74,20 @@ export async function updateVotingSchedule(
   startDate: string,
   endDate: string
 ): Promise<boolean> {
+  const start = toMySqlDateTime(startDate);
+  const end = toMySqlDateTime(endDate);
+
   // Try update existing config (id=1)
   const result = await execute(
     'UPDATE voting SET vot_start_date = ?, vot_end_date = ? WHERE id = 1',
-    [startDate, endDate]
+    [start, end]
   );
 
   // If no row updated, insert a new config row
   if (result.affectedRows === 0) {
     const insert = await execute(
       'INSERT INTO voting (id, voting_title, vot_start_date, vot_end_date) VALUES (1, ?, ?, ?) ON DUPLICATE KEY UPDATE vot_start_date = VALUES(vot_start_date), vot_end_date = VALUES(vot_end_date)',
-      ['Election', startDate, endDate]
+      ['Election', start, end]
     );
     return insert.affectedRows > 0;
   }
