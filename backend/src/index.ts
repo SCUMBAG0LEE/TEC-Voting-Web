@@ -143,10 +143,11 @@ const app = new Elysia()
   })
   
   // Start server
-  .listen({
-    hostname: config.server.host,
-    port: config.server.port
-  });
+  // Note: When HOST is '0.0.0.0', omit hostname to let Bun handle binding (avoids EADDRINUSE issues)
+  .listen(config.server.host === '0.0.0.0' 
+    ? { port: config.server.port }
+    : { hostname: config.server.host, port: config.server.port }
+  );
 
 const displayHost = config.server.host === '0.0.0.0' ? 'localhost' : config.server.host;
 console.log(`
