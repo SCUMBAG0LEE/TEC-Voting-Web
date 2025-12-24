@@ -12,7 +12,10 @@ A modern, full-stack electronic voting system for the Tarumanagara English Club,
 - 🗳️ **Secure Voting** - One vote per voter with atomic transactions
 - 🔐 **JWT Authentication** - Separate auth flows for voters and admins
 - 🔒 **Password Security** - Bcrypt hashing with auto-upgrade from legacy
-- 🚦 **Rate Limiting** - Protection against brute force attacks
+- 🚦 **Rate Limiting** - Protection against brute force attacks (5 login attempts/min)
+- 🛡️ **Input Validation** - Strict schema validation on all endpoints
+- 🗂️ **Path Traversal Protection** - Secure file serving with directory confinement
+- 💉 **SQL Injection Prevention** - Parameterized queries throughout
 - 📊 **Live Results** - Real-time vote tallying with percentages
 - 📅 **Scheduled Voting** - Configurable start/end times with auto-activation
 - 📜 **Election History** - Automatic archival of past elections
@@ -262,15 +265,21 @@ server {
 
 - **JWT Authentication** with configurable expiration
 - **Bcrypt Password Hashing** (cost factor 10)
-- **Rate Limiting** on auth endpoints (5 req/min)
+- **Rate Limiting** on auth endpoints (5 req/min per IP)
 - **CORS Protection** with configurable origins
 - **Path Traversal Prevention** on file uploads
 - **SQL Injection Prevention** via parameterized queries
+- **Input Validation** using TypeBox schemas
+- **Double-Vote Prevention** with database constraints
+- **Transaction Isolation** for atomic vote operations
+
+For detailed security documentation, see [SECURITY.md](./SECURITY.md)
 
 ## 📖 Additional Documentation
 
 - [Backend README](./backend/README.md) - API endpoints, database schema, deployment
 - [Frontend README](./frontend/README.md) - Components, routing, environment config
+- [SECURITY.md](./SECURITY.md) - Security features, threat model, best practices
 
 ## 🛠️ Tech Stack
 
