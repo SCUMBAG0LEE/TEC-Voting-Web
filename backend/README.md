@@ -90,17 +90,29 @@ CORS_ORIGIN=*
 
 ### Host Configuration
 
-The `HOST` variable controls which network interface the server binds to:
+The `HOST` variable controls which network interface the server binds to.
+
+Built on **ElysiaJS**, which properly handles both IPv4 and IPv6 bindings:
 
 ```env
-# Local only (default) - only accessible from the same machine
+# Local only - only accessible from the same machine (default)
 HOST=localhost
 
 # All interfaces - accessible from other devices on the network
+# This binds to both IPv4 (0.0.0.0) and IPv6 (::)
 HOST=0.0.0.0
+
+# Specific IP - use your machine's IP for network access
+# Useful if you encounter binding issues
+HOST=192.168.1.100
 ```
 
-Use `0.0.0.0` when you need to access the API from other devices (e.g., testing on mobile, or running frontend on a different machine).
+**Recommended for different scenarios:**
+- **Development (local only):** `HOST=localhost`
+- **Development (network testing):** `HOST=0.0.0.0` (works reliably with ElysiaJS)
+- **Server deployments:** Use your actual server IP (e.g., `192.168.1.100`)
+
+Use `0.0.0.0` or your machine's IP when you need to access the API from other devices (e.g., testing on mobile, running frontend on a different machine, or server deployments).
 
 ### Production Configuration
 

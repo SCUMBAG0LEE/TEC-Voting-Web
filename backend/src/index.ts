@@ -16,7 +16,12 @@ import { testConnection } from './db';
 import { voterRoutes, adminRoutes, candidateRoutes, uploadRoutes } from './routes';
 
 // Create main Elysia app
-const app = new Elysia()
+const app = new Elysia({
+  serve: {
+    hostname: config.server.host, // Can be 'localhost' or '0.0.0.0' for all interfaces
+    port: config.server.port,
+  },
+})
   // CORS configuration
   .use(cors({
     origin: config.cors.origin,
@@ -140,14 +145,7 @@ const app = new Elysia()
         ? errorMessage 
         : 'Internal server error',
     };
-  })
-  
-  // Start server
-  // Note: When HOST is '0.0.0.0', omit hostname to let Bun handle binding (avoids EADDRINUSE issues)
-  .listen(config.server.host === '0.0.0.0' 
-    ? { port: config.server.port }
-    : { hostname: config.server.host, port: config.server.port }
-  );
+  });
 
 const displayHost = config.server.host === '0.0.0.0' ? 'localhost' : config.server.host;
 console.log(`
