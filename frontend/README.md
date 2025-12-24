@@ -52,11 +52,33 @@ npm start
 
 ## 📦 Production Build
 
+### Deploy at Root Path
+
+If deploying at the root of your domain (e.g., `https://example.com/`):
+
 ```bash
-npm run build
+npm run build:prod
 ```
 
-Build artifacts are stored in `dist/frontend/`.
+### Deploy at Subpath
+
+If deploying to a subpath (e.g., `https://example.com/voting/`):
+
+```bash
+npm run build:subpath
+```
+
+This builds with `baseHref="/voting/"` configured. Update `/voting/` in `angular.json` under `production:subpath` configuration if your path differs.
+
+### Custom Subpath
+
+For a custom subpath:
+
+```bash
+ng build --configuration production --base-href /your-path/
+```
+
+Build artifacts are stored in `dist/frontend/browser/`.
 
 ## ⚙️ Configuration
 
@@ -84,11 +106,21 @@ export const environment = {
 
 #### For Production
 
-The production config uses relative paths (`/api`, `/static`), which works when:
-- Frontend and backend are on the same domain
-- Using a reverse proxy (nginx/Apache) to route `/api` to the backend
+Update `src/environments/environment.prod.ts` with your backend URL:
 
-**Example nginx config:**
+```typescript
+export const environment = {
+  production: true,
+  apiUrl: 'https://api.example.com/api',  // Your backend API URL
+  staticUrl: 'https://api.example.com/static',
+  appName: 'TEC Online Voting',
+};
+```
+
+### Nginx Deployment
+
+#### Option 1: Deploy at Root Domain
+
 ```nginx
 server {
     listen 80;
@@ -96,7 +128,43 @@ server {
 
     # Serve Angular app
     location / {
-        root /var/www/frontend/dist/frontend/browser;
+        root /var/www/TEC-Voting-Web/dist/frontend/browser;
+        try_files $uri $uri/ /index.html;
+        index index.html;
+    }
+}
+```
+
+Build command: `npm run build:prod`
+
+#### Option 2: Deploy at Subpath
+
+```nginx
+server {
+    listen 80;
+    server_name example.com;
+
+    # Serve Angular app at /voting
+    location /voting {
+        alias /var/www/TEC-Voting-Web/dist/frontend/browser;
+        try_files $uri $uri/ /voting/index.html;
+        index index.html;
+    }
+}
+```
+
+Build command: `npm run build:subpath`
+
+#### Option 3: Frontend and Backend on Same Server
+
+```nginx
+server {
+    listen 80;
+    server_name voting.example.com;
+
+    # Serve Angular app
+    location / {
+        root /var/www/TEC-Voting-Web/dist/frontend/browser;
         try_files $uri $uri/ /index.html;
     }
 

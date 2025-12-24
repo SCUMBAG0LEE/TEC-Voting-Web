@@ -72,6 +72,23 @@
               "outputHashing": "all",
               "serviceWorker": "ngsw-config.json"
             },
+            "production:subpath": {
+              "budgets": [
+                {
+                  "type": "initial",
+                  "maximumWarning": "500kB",
+                  "maximumError": "1MB"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kB",
+                  "maximumError": "10kB"
+                }
+              ],
+              "outputHashing": "all",
+              "serviceWorker": "ngsw-config.json",
+              "baseHref": "/voting/"
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
