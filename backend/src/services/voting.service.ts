@@ -65,22 +65,44 @@ export async function updateVotingSchedule(
   startDate: string,
   endDate: string
 ): Promise<boolean> {
+  // Try update existing config (id=1)
   const result = await execute(
     'UPDATE voting SET vot_start_date = ?, vot_end_date = ? WHERE id = 1',
     [startDate, endDate]
   );
-  return result.affectedRows > 0;
+
+  // If no row updated, insert a new config row
+  if (result.affectedRows === 0) {
+    const insert = await execute(
+      'INSERT INTO voting (id, voting_title, vot_start_date, vot_end_date) VALUES (1, ?, ?, ?) ON DUPLICATE KEY UPDATE vot_start_date = VALUES(vot_start_date), vot_end_date = VALUES(vot_end_date)',
+      ['Election', startDate, endDate]
+    );
+    return insert.affectedRows > 0;
+  }
+
+  return true;
 }
 
 /**
  * Update voting title
  */
 export async function updateVotingTitle(title: string): Promise<boolean> {
+  // Try update existing config (id=1)
   const result = await execute(
     'UPDATE voting SET voting_title = ? WHERE id = 1',
     [title]
   );
-  return result.affectedRows > 0;
+
+  // If no row updated, insert a new config row
+  if (result.affectedRows === 0) {
+    const insert = await execute(
+      'INSERT INTO voting (id, voting_title, vot_start_date, vot_end_date) VALUES (1, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE voting_title = VALUES(voting_title)',
+      [title]
+    );
+    return insert.affectedRows > 0;
+  }
+
+  return true;
 }
 
 /**
