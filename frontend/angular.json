@@ -78,7 +78,7 @@
                 }
               ]
             },
-            "production:subpath": {
+            "subpath": {
               "budgets": [
                 {
                   "type": "initial",
