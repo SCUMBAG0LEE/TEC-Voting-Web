@@ -50,7 +50,22 @@ A modern backend API for the Tarumanagara English Club Online Voting System, bui
    bun run dev
    ```
 
-4. **Build for production:**
+4. **Create an admin user (manual bootstrap):**
+   ```bash
+   python - <<'PY'
+import bcrypt
+from getpass import getpass
+email = input('Admin email: ').strip()
+pwd = getpass('Admin password: ')
+hash_ = bcrypt.hashpw(pwd.encode(), bcrypt.gensalt(rounds=10)).decode()
+print('\nSQL:')
+print(f"INSERT INTO admin (name, email, password) VALUES ('Admin', '{email}', '{hash_}')\n"
+      f"ON DUPLICATE KEY UPDATE password = VALUES(password);")
+PY
+   # run the printed SQL against your database
+   ```
+
+5. **Build for production:**
    ```bash
    bun run build
    ```
