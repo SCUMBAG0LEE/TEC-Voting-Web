@@ -144,15 +144,17 @@ const app = new Elysia()
   
   // Start server
   .listen({
-    port: config.server.port,
-    hostname: '0.0.0.0',
+    hostname: config.server.host,
+    port: config.server.port
   });
 
+const displayHost = config.server.host === '0.0.0.0' ? 'localhost' : config.server.host;
 console.log(`
 🗳️  TEC Online Voting API
 
-   Server:      http://0.0.0.0:${config.server.port}
-   Swagger:     http://0.0.0.0:${config.server.port}/docs
+   Server:      http://${displayHost}:${config.server.port}
+   Swagger:     http://${displayHost}:${config.server.port}/docs
+   Host:        ${config.server.host} ${config.server.host === '0.0.0.0' ? '(all interfaces)' : '(local only)'}
    Environment: ${config.server.env}
 `);
 

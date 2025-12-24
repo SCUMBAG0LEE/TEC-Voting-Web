@@ -35,6 +35,7 @@ export const config = {
   
   // Server
   server: {
+    host: process.env.HOST || 'localhost', // Use '0.0.0.0' to listen on all interfaces
     port: parseInt(process.env.PORT || '3000'),
     env: process.env.NODE_ENV || 'development',
   },

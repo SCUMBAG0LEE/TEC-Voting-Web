@@ -68,6 +68,7 @@ Create a `.env` file based on `.env.example`:
 | `DB_NAME` | Database name | `voting` |
 | `JWT_SECRET` | JWT signing secret | (required) |
 | `JWT_EXPIRES_IN` | JWT expiration | `24h` |
+| `HOST` | Server host/interface | `localhost` |
 | `PORT` | Server port | `3000` |
 | `NODE_ENV` | Environment | `development` |
 | `CORS_ORIGIN` | Allowed CORS origin(s) | `http://localhost:4200` |
@@ -86,6 +87,20 @@ CORS_ORIGIN=http://localhost:4200,https://voting.example.com,https://admin.examp
 # Allow all origins (not recommended for production)
 CORS_ORIGIN=*
 ```
+
+### Host Configuration
+
+The `HOST` variable controls which network interface the server binds to:
+
+```env
+# Local only (default) - only accessible from the same machine
+HOST=localhost
+
+# All interfaces - accessible from other devices on the network
+HOST=0.0.0.0
+```
+
+Use `0.0.0.0` when you need to access the API from other devices (e.g., testing on mobile, or running frontend on a different machine).
 
 ### Production Configuration
 
