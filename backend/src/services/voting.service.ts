@@ -10,6 +10,14 @@ import type { VotingConfig, VotingStatus } from '../types';
 
 // Convert ISO/Date string to MySQL DATETIME format (UTC)
 function toMySqlDateTime(dateString: string): string {
+  // Preserve local wall-clock values for strings like 2026-05-06T23:00[:00]
+  // so DATETIME storage does not shift by timezone.
+  const localMatch = dateString.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(?::(\d{2}))?$/);
+  if (localMatch) {
+    const [, datePart, timePart, seconds] = localMatch;
+    return `${datePart} ${timePart}:${seconds || '00'}`;
+  }
+
   const d = new Date(dateString);
   if (isNaN(d.getTime())) {
     throw new Error('Invalid date');

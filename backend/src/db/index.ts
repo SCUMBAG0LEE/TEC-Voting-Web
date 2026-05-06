@@ -22,6 +22,8 @@ function getPool(): mysql.Pool {
       user: config.db.user,
       password: config.db.password,
       database: config.db.database,
+      // Return DATE/DATETIME fields as strings to avoid implicit timezone conversions
+      dateStrings: true,
       waitForConnections: true,
       connectionLimit: 10,
       queueLimit: 0,

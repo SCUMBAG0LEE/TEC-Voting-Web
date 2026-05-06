@@ -393,9 +393,25 @@ export class AdminConfigComponent implements OnInit {
       });
   }
   
-  formatDateForInput(dateString: string): string {
-    const date = new Date(dateString);
-    return date.toISOString().slice(0, 16);
+  formatDateForInput(dateValue: string | Date): string {
+    if (!dateValue) return '';
+
+    // If backend returned a Date object (possible if driver converted it), use local fields
+    if (dateValue instanceof Date) {
+      const d = dateValue;
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    const s = String(dateValue);
+    const localMatch = s.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})/);
+    if (localMatch) return `${localMatch[1]}T${localMatch[2]}`;
+
+    // Fallback for timezone-aware ISO strings.
+    const date = new Date(s);
+    if (isNaN(date.getTime())) return '';
+    const tzOffset = date.getTimezoneOffset() * 60000;
+    return new Date(date.getTime() - tzOffset).toISOString().slice(0, 16);
   }
   
   saveTitle() {
@@ -440,11 +456,14 @@ export class AdminConfigComponent implements OnInit {
     }
     
     this.isSaving.set(true);
+
+    const startPayload = this.startTime.length === 16 ? `${this.startTime}:00` : this.startTime;
+    const endPayload = this.endTime.length === 16 ? `${this.endTime}:00` : this.endTime;
     
     this.apiService.updateVotingSchedule(
       this.electionTitle.trim() || 'Election',
-      start.toISOString(), 
-      end.toISOString()
+      startPayload,
+      endPayload
     )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
