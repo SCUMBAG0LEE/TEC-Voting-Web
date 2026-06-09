@@ -157,6 +157,8 @@ console.log(`
    Environment: ${config.server.env}
 `);
 
+app.listen();
+
 // Test database connection on startup (non-blocking)
 (async () => {
   try {
