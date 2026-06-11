@@ -313,5 +313,3 @@ MIT
 ---
 
 **See also**: [Backend README](../backend/README.md) for API documentation.
-n.
-ion.
