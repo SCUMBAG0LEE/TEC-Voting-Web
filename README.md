@@ -93,7 +93,7 @@ cd frontend
 npm install
 
 # Start development server
-npm start
+bun start
 ```
 
 Frontend will be available at `http://localhost:4200`

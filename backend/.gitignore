@@ -4,6 +4,13 @@ dist/
 *.log
 .DS_Store
 
+# Lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lock
+bun.lockb
+
 # Uploaded files (but keep folder structure)
 uploads/**/*
 !uploads/**/.gitkeep
