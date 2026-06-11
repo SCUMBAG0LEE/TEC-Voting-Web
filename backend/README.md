@@ -6,7 +6,7 @@ A modern backend API for the Tarumanagara English Club Online Voting System, bui
 
 - **Runtime**: [Bun](https://bun.sh/) v1.0+ - Fast all-in-one JavaScript runtime
 - **Framework**: [ElysiaJS](https://elysiajs.com/) v1.4 - Fast, type-safe web framework
-- **Database**: MariaDB/MySQL via mysql2
+- **Database**: MariaDB / MySQL via native mariadb connector
 - **Authentication**: JWT with bcrypt password hashing
 - **Security**: Rate limiting on auth endpoints
 - **Documentation**: Swagger/OpenAPI at `/docs`

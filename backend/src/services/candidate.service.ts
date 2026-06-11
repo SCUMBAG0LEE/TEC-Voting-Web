@@ -46,7 +46,7 @@ export async function createCandidate(data: CandidateCreateRequest): Promise<{ s
       'INSERT INTO candidates (name, nim, major, batch, photo) VALUES (?, ?, ?, ?, ?)',
       [data.name, data.nim, data.major, data.batch, data.photo || null]
     );
-    return { success: true, message: 'Candidate created successfully', id: result.insertId };
+    return { success: true, message: 'Candidate created successfully', id: Number(result.insertId) };
   } catch (error: any) {
     if (error.code === 'ER_DUP_ENTRY') {
       return { success: false, message: 'NIM already registered as candidate' };

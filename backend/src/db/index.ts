@@ -2,21 +2,23 @@
  * Database Connection Module
  * TEC Voting System - Backend
  * 
- * Using mysql2 for MariaDB compatibility
+ * Using the native mariadb connector for optimal performance
  */
 
-import mysql from 'mysql2/promise';
+import mariadb, { type Pool, type UpsertResult } from 'mariadb';
 import { config } from '../config';
 
+export type { UpsertResult } from 'mariadb';
+
 // Pool instance (lazy initialization)
-let pool: mysql.Pool | null = null;
+let pool: Pool | null = null;
 
 /**
  * Get the database pool (lazy initialization)
  */
-function getPool(): mysql.Pool {
+function getPool(): Pool {
   if (!pool) {
-    pool = mysql.createPool({
+    pool = mariadb.createPool({
       host: config.db.host,
       port: config.db.port,
       user: config.db.user,
@@ -24,11 +26,9 @@ function getPool(): mysql.Pool {
       database: config.db.database,
       // Return DATE/DATETIME fields as strings to avoid implicit timezone conversions
       dateStrings: true,
-      waitForConnections: true,
+      // Return insertId as Number instead of BigInt to avoid JSON serialization issues
+      insertIdAsNumber: true,
       connectionLimit: 10,
-      queueLimit: 0,
-      enableKeepAlive: true,
-      keepAliveInitialDelay: 0,
       connectTimeout: 10000, // 10 seconds timeout
     });
   }
@@ -37,13 +37,14 @@ function getPool(): mysql.Pool {
 
 /**
  * Execute a query with parameters
+ * mariadb returns rows directly (not wrapped in [rows, fields] like mysql2)
  */
 export async function query<T = any>(
   sql: string,
   params?: any[]
 ): Promise<T[]> {
   try {
-    const [rows] = await getPool().execute(sql, params);
+    const rows = await getPool().query(sql, params);
     return rows as T[];
   } catch (error) {
     console.error('Database query error:', error);
@@ -68,10 +69,10 @@ export async function queryOne<T = any>(
 export async function execute(
   sql: string,
   params?: any[]
-): Promise<mysql.ResultSetHeader> {
+): Promise<UpsertResult> {
   try {
-    const [result] = await getPool().execute(sql, params);
-    return result as mysql.ResultSetHeader;
+    const result = await getPool().query(sql, params);
+    return result as UpsertResult;
   } catch (error) {
     console.error('Database execute error:', error);
     throw error;

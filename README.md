@@ -5,7 +5,7 @@ A modern, full-stack electronic voting system for the Tarumanagara English Club,
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Frontend](https://img.shields.io/badge/frontend-Angular%2021-red.svg)
 ![Backend](https://img.shields.io/badge/backend-Bun%20%2B%20ElysiaJS-orange.svg)
-![Database](https://img.shields.io/badge/database-MariaDB-blue.svg)
+![Database](https://img.shields.io/badge/database-MariaDB%20%2F%20MySQL-blue.svg)
 
 ## ✨ Features
 
@@ -32,10 +32,10 @@ A modern, full-stack electronic voting system for the Tarumanagara English Club,
 │                 │ ◄────────────────► │                 │
 └─────────────────┘                    └────────┬────────┘
      Port 4200                                  │
-                                                │ mysql2
+                                                │ mariadb
                                                 ▼
                                     ┌─────────────────────┐
-                                    │      MariaDB        │
+                                    │  MariaDB / MySQL    │
                                     │     (Database)      │
                                     └─────────────────────┘
                                          Port 3306

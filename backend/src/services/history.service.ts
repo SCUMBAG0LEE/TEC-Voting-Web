@@ -104,7 +104,7 @@ export async function saveElectionToHistory(): Promise<{ success: boolean; messa
       ]
     );
     
-    return { success: true, message: 'Election saved to history', id: result.insertId };
+    return { success: true, message: 'Election saved to history', id: Number(result.insertId) };
   } catch (error) {
     throw error;
   }
@@ -128,13 +128,13 @@ export async function resetVotingSystem(saveHistory: boolean = true): Promise<{ 
     }
     
     // Reset all candidate votes
-    await connection.execute('UPDATE candidates SET votes = 0');
+    await connection.query('UPDATE candidates SET votes = 0');
     
     // Reset all voters' vote status
-    await connection.execute('UPDATE voters SET vote = 0');
+    await connection.query('UPDATE voters SET vote = 0');
     
     // Update last reset timestamp
-    await connection.execute('UPDATE voting SET last_reset = NOW()');
+    await connection.query('UPDATE voting SET last_reset = NOW()');
     
     await connection.commit();
     

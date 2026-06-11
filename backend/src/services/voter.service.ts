@@ -34,7 +34,7 @@ export async function castVote(nim: string, candidateId: number): Promise<{ succ
     await connection.beginTransaction();
     
     // Check if voter exists and hasn't voted
-    const [voterRows] = await connection.execute(
+    const voterRows = await connection.query(
       'SELECT * FROM voters WHERE nim = ? FOR UPDATE',
       [nim]
     );
@@ -51,7 +51,7 @@ export async function castVote(nim: string, candidateId: number): Promise<{ succ
     }
     
     // Check if candidate exists
-    const [candRows] = await connection.execute(
+    const candRows = await connection.query(
       'SELECT * FROM candidates WHERE id = ?',
       [candidateId]
     );
@@ -63,13 +63,13 @@ export async function castVote(nim: string, candidateId: number): Promise<{ succ
     }
     
     // Increment candidate votes
-    await connection.execute(
+    await connection.query(
       'UPDATE candidates SET votes = votes + 1 WHERE id = ?',
       [candidateId]
     );
     
     // Mark voter as voted
-    await connection.execute(
+    await connection.query(
       'UPDATE voters SET vote = 1 WHERE nim = ?',
       [nim]
     );
