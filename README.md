@@ -45,8 +45,7 @@ A modern, full-stack electronic voting system for the Tarumanagara English Club,
 
 ### Prerequisites
 
-- [Node.js](https://nodejs.org/) v20+ (for Angular CLI)
-- [Bun](https://bun.sh/) v1.0+ (for backend)
+- [Bun](https://bun.sh/) v1.0+ (used for both frontend and backend)
 - MariaDB or MySQL database
 
 ### 1. Clone the repository
@@ -90,10 +89,10 @@ API documentation at `http://localhost:3000/docs`
 cd frontend
 
 # Install dependencies
-npm install
+bun install
 
 # Start development server
-bun start
+bun run start
 ```
 
 Frontend will be available at `http://localhost:4200`
@@ -227,7 +226,7 @@ bun run dist/index.js
 cd frontend
 
 # Build for production
-npm run build
+bun run build
 
 # Output in dist/frontend/browser/
 # Serve with nginx, Apache, or any static file server
@@ -285,7 +284,7 @@ For detailed security documentation, see [SECURITY.md](./SECURITY.md)
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | Angular 21, TypeScript, SCSS |
+| Frontend | Angular 21, TypeScript, SCSS, Bun |
 | Backend | Bun, ElysiaJS, TypeScript |
 | Database | MariaDB / MySQL |
 | Auth | JWT (jsonwebtoken) |
@@ -300,3 +299,8 @@ MIT License - feel free to use this project for your own voting systems.
 
 **Migrated from**: Legacy PHP voting system  
 **Original Purpose**: Tarumanagara English Club elections
+tions
+nagara English Club elections
+tions
+
+tions

@@ -29,22 +29,22 @@ A modern Progressive Web Application (PWA) for electronic voting, built with **A
 
 ## 📋 Prerequisites
 
-- **Node.js**: v20+ (recommended: v22+)
-- **npm**: v10+
+- **Node.js**: Not required (using Bun)
+- **Bun**: v1.0+
 - **Backend API**: Running on `http://localhost:3000`
 
 ## 🛠️ Installation
 
 ```bash
 cd frontend
-npm install
+bun install
 ```
 
 ## 🚀 Development
 
 ```bash
 # Start development server
-npm start
+bun run start
 
 # Navigate to http://localhost:4200
 # App auto-reloads on file changes
@@ -57,7 +57,7 @@ npm start
 If deploying at the root of your domain (e.g., `https://example.com/`):
 
 ```bash
-npm run build:prod
+bun run build:prod
 ```
 
 ### Deploy at Subpath
@@ -65,7 +65,7 @@ npm run build:prod
 If deploying to a subpath (e.g., `https://example.com/voting/`):
 
 ```bash
-npm run build:subpath
+bun run build:subpath
 ```
 
 This builds with `baseHref="/voting/"` configured. Update `/voting/` in `angular.json` under `production:subpath` configuration if your path differs.
@@ -75,7 +75,7 @@ This builds with `baseHref="/voting/"` configured. Update `/voting/` in `angular
 For a custom subpath:
 
 ```bash
-ng build --configuration production --base-href /your-path/
+bun run ng build --configuration production --base-href /your-path/
 ```
 
 Build artifacts are stored in `dist/frontend/browser/`.
@@ -135,7 +135,7 @@ server {
 }
 ```
 
-Build command: `npm run build:prod`
+Build command: `bun run build:prod`
 
 #### Option 2: Deploy at Subpath
 
@@ -153,7 +153,7 @@ server {
 }
 ```
 
-Build command: `npm run build:subpath`
+Build command: `bun run build:subpath`
 
 #### Option 3: Frontend and Backend on Same Server
 
@@ -198,7 +198,7 @@ export const environment = {
 };
 ```
 
-Then rebuild: `npm run build`
+Then rebuild: `bun run build`
 
 ### Why Not .env Files?
 
@@ -284,8 +284,8 @@ The app is a Progressive Web App:
 
 Test PWA locally:
 ```bash
-npm run build
-npx http-server dist/frontend/browser -p 8080
+bun run build
+bunx http-server dist/frontend/browser -p 8080
 ```
 
 ## 🐛 Troubleshooting
@@ -301,10 +301,10 @@ npx http-server dist/frontend/browser -p 8080
 
 | Command | Description |
 |---------|-------------|
-| `npm start` | Start dev server at port 4200 |
-| `npm run build` | Production build |
-| `npm run watch` | Build in watch mode |
-| `npm test` | Run unit tests |
+| `bun run start` | Start dev server at port 4200 |
+| `bun run build` | Production build |
+| `bun run watch` | Build in watch mode |
+| `bun run test` | Run unit tests |
 
 ## 📄 License
 
@@ -313,3 +313,5 @@ MIT
 ---
 
 **See also**: [Backend README](../backend/README.md) for API documentation.
+n.
+ion.
