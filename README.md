@@ -299,8 +299,3 @@ MIT License - feel free to use this project for your own voting systems.
 
 **Migrated from**: Legacy PHP voting system  
 **Original Purpose**: Tarumanagara English Club elections
-tions
-nagara English Club elections
-tions
-
-tions
