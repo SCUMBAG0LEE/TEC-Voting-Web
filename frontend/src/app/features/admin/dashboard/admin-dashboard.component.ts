@@ -1,6 +1,8 @@
 import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { timer } from 'rxjs';
+import { switchMap, tap } from 'rxjs/operators';
 import { ApiService } from '../../../core';
 import { DashboardData, Candidate } from '../../../core/models';
 import { LoadingComponent, ToastService } from '../../../shared';
@@ -19,6 +21,9 @@ import { environment } from '../../../../environments/environment';
       <header class="dashboard-header">
         <h1>Dashboard</h1>
         <p>Overview of the voting system</p>
+        <span class="refresh-note">
+          <i class="icon">⏱️</i> Stats automatically update every 5 seconds to optimize performance.
+        </span>
       </header>
       
       <div class="stats-grid">
@@ -138,8 +143,20 @@ import { environment } from '../../../../environments/environment';
     </div>
   `,
   styles: [`
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes spinPulse {
+      0% { transform: rotate(0deg) scale(1); }
+      50% { transform: rotate(180deg) scale(1.1); }
+      100% { transform: rotate(360deg) scale(1); }
+    }
+
     .dashboard {
       max-width: 1400px;
+      animation: fadeInUp 0.5s ease-out forwards;
     }
     
     .dashboard-header {
@@ -154,6 +171,25 @@ import { environment } from '../../../../environments/environment';
       p {
         color: #6b7280;
         margin: 0;
+      }
+      
+      .refresh-note {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        background: #eff6ff;
+        color: #3b82f6;
+        font-size: 0.85rem;
+        font-weight: 500;
+        border-radius: 9999px;
+        
+        .icon {
+          font-style: normal;
+          display: inline-block;
+          animation: spinPulse 5s linear infinite;
+        }
       }
     }
     
@@ -172,6 +208,19 @@ import { environment } from '../../../../environments/environment';
       align-items: center;
       gap: 1rem;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      opacity: 0;
+      animation: fadeInUp 0.5s ease-out forwards;
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+      
+      &:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+      }
+      
+      &:nth-child(1) { animation-delay: 0.1s; }
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.3s; }
+      &:nth-child(4) { animation-delay: 0.4s; }
     }
     
     .stat-icon {
@@ -217,6 +266,16 @@ import { environment } from '../../../../environments/environment';
       border-radius: 16px;
       padding: 1.5rem;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      opacity: 0;
+      animation: fadeInUp 0.6s ease-out forwards;
+      transition: box-shadow 0.3s ease;
+      
+      &:hover {
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+      }
+      
+      &:nth-child(1) { animation-delay: 0.4s; }
+      &:nth-child(2) { animation-delay: 0.5s; }
       
       h2 {
         font-size: 1.1rem;
@@ -331,6 +390,16 @@ import { environment } from '../../../../environments/environment';
       display: flex;
       align-items: center;
       gap: 1rem;
+      padding: 1rem;
+      border-radius: 12px;
+      background: #fefefe;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      
+      &:hover {
+        background: white;
+        transform: scale(1.01);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      }
       
       @media (max-width: 600px) {
         flex-direction: column;
@@ -416,19 +485,29 @@ export class AdminDashboardComponent implements OnInit {
   loadDashboard() {
     this.isLoading.set(true);
     
-    this.apiService.getDashboard()
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    // Poll every 5 seconds (5000ms), starting immediately (0ms)
+    timer(0, 5000)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap(() => this.apiService.getDashboard())
+      )
       .subscribe({
         next: (response) => {
           if (response.success && response.data) {
             this.data.set(response.data);
             this.candidates.set(response.data.tally || []);
           }
-          this.isLoading.set(false);
+          // Only clear loading state on first load
+          if (this.isLoading()) {
+            this.isLoading.set(false);
+          }
         },
         error: (error) => {
-          this.toastService.error('Failed to load dashboard');
-          this.isLoading.set(false);
+          // Only show error toast on first failure to prevent toast spam
+          if (this.isLoading()) {
+            this.toastService.error('Failed to load dashboard');
+            this.isLoading.set(false);
+          }
         }
       });
   }

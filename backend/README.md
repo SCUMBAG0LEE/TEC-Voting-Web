@@ -24,6 +24,8 @@ A modern backend API for the Tarumanagara English Club Online Voting System, bui
 - 📊 **Live Vote Tallying** - Real-time results with percentages
 - 📅 **Voting Schedule** - Configurable start/end times with auto-activation
 - 📜 **Election History** - Auto-save results before reset
+- 💾 **Automated Backups** - Generates full JSON database snapshots on reset
+- 🚀 **Redis Caching** - Optional auto-detecting Redis cache for high-performance dashboard and polling
 - 🔄 **System Reset** - Reset votes while preserving history
 - 📖 **API Documentation** - Swagger UI at `/docs`
 
@@ -88,6 +90,10 @@ Create a `.env` file based on `.env.example`:
 | `PORT` | Server port | `3000` |
 | `NODE_ENV` | Environment | `development` |
 | `CORS_ORIGIN` | Allowed CORS origin(s) | `http://localhost:4200` |
+| `REDIS_URL` | Redis connection URL | (optional) |
+| `REDIS_HOST` | Redis host | (optional) |
+| `REDIS_PORT` | Redis port | `6379` |
+| `REDIS_PASSWORD`| Redis password | (optional) |
 
 ### CORS Configuration
 

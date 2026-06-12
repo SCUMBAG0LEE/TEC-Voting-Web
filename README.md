@@ -20,6 +20,8 @@ A modern, full-stack electronic voting system for the Tarumanagara English Club,
 - 📊 **Live Results** - Real-time vote tallying with percentages
 - 📅 **Scheduled Voting** - Configurable start/end times with auto-activation
 - 📜 **Election History** - Automatic archival of past elections
+- 💾 **Automated Backups** - Full JSON database snapshot generation on system reset
+- 🚀 **Redis Caching** - Optional cache layer for high-performance dashboard and polling
 - 📱 **PWA Support** - Installable on mobile/desktop with offline support
 - 🎨 **Modern UI** - Clean, responsive design with dark gradient theme
 

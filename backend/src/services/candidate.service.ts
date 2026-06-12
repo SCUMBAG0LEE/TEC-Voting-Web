@@ -7,6 +7,11 @@
 
 import { query, queryOne, execute } from '../db';
 import type { Candidate, CandidateCreateRequest, CandidateUpdateRequest, CandidatePublic, CandidateResult } from '../types';
+import { getOrSetCache, invalidateCache } from './cache.service';
+
+const CACHE_KEYS = {
+  CANDIDATES_PUBLIC: 'candidates:public'
+};
 
 /**
  * Get all candidates (with votes - admin only)
@@ -19,8 +24,14 @@ export async function getAllCandidates(): Promise<Candidate[]> {
  * Get all candidates (without votes - public)
  */
 export async function getAllCandidatesPublic(): Promise<CandidatePublic[]> {
-  const candidates = await query<Candidate>('SELECT * FROM candidates ORDER BY id ASC');
-  return candidates.map(({ votes, ...rest }) => rest);
+  return getOrSetCache(
+    CACHE_KEYS.CANDIDATES_PUBLIC,
+    300, // Cache for 5 minutes, list doesn't change during election
+    async () => {
+      const candidates = await query<Candidate>('SELECT * FROM candidates ORDER BY id ASC');
+      return candidates.map(({ votes, ...rest }) => rest);
+    }
+  );
 }
 
 /**
@@ -46,6 +57,7 @@ export async function createCandidate(data: CandidateCreateRequest): Promise<{ s
       'INSERT INTO candidates (name, nim, major, batch, photo) VALUES (?, ?, ?, ?, ?)',
       [data.name, data.nim, data.major, data.batch, data.photo || null]
     );
+    await invalidateCache(CACHE_KEYS.CANDIDATES_PUBLIC);
     return { success: true, message: 'Candidate created successfully', id: Number(result.insertId) };
   } catch (error: any) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -100,6 +112,7 @@ export async function updateCandidate(id: number, data: CandidateUpdateRequest):
       `UPDATE candidates SET ${updates.join(', ')} WHERE id = ?`,
       values
     );
+    await invalidateCache(CACHE_KEYS.CANDIDATES_PUBLIC);
     return { success: true, message: 'Candidate updated successfully' };
   } catch (error: any) {
     if (error.code === 'ER_DUP_ENTRY') {
@@ -114,7 +127,11 @@ export async function updateCandidate(id: number, data: CandidateUpdateRequest):
  */
 export async function deleteCandidate(id: number): Promise<boolean> {
   const result = await execute('DELETE FROM candidates WHERE id = ?', [id]);
-  return result.affectedRows > 0;
+  if (result.affectedRows > 0) {
+    await invalidateCache(CACHE_KEYS.CANDIDATES_PUBLIC);
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -151,5 +168,7 @@ export async function getVoteTally(): Promise<CandidateResult[]> {
  */
 export async function resetAllVotes(): Promise<number> {
   const result = await execute('UPDATE candidates SET votes = 0');
+  // No need to invalidate public candidates list, but good practice
+  await invalidateCache(CACHE_KEYS.CANDIDATES_PUBLIC);
   return result.affectedRows;
 }

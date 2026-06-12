@@ -5,6 +5,8 @@
  * Handles saving and retrieving election history
  */
 
+import fs from 'fs';
+import path from 'path';
 import { query, queryOne, execute, getConnection } from '../db';
 import type { ElectionHistory, ElectionHistoryParsed, CandidateResult } from '../types';
 import { getVoteTally, resetAllVotes } from './candidate.service';
@@ -119,6 +121,43 @@ export async function resetVotingSystem(saveHistory: boolean = true): Promise<{ 
   try {
     await connection.beginTransaction();
     
+    // === FULL DATABASE BACKUP ===
+    // Backup all relevant tables before they are cleared
+    const allVoters = await connection.query('SELECT * FROM voters');
+    const allCandidates = await connection.query('SELECT * FROM candidates');
+    const allDevices = await connection.query('SELECT * FROM device_votes');
+    const allConfig = await connection.query('SELECT * FROM voting');
+    const allAdmin = await connection.query('SELECT * FROM admin');
+    const allHistory = await connection.query('SELECT * FROM election_history');
+    
+    // MariaDB driver returns BigInt for some fields, which JSON.stringify can't serialize
+    // We use a custom replacer to convert BigInt to Number/String
+    const dbBackup = {
+      timestamp: new Date().toISOString(),
+      admin: allAdmin,
+      voting: allConfig,
+      candidates: allCandidates,
+      voters: allVoters,
+      device_votes: allDevices,
+      election_history: allHistory
+    };
+    
+    const backupDir = path.join(process.cwd(), 'db_backups');
+    if (!fs.existsSync(backupDir)) {
+      fs.mkdirSync(backupDir, { recursive: true });
+    }
+    
+    const timestampStr = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupFilePath = path.join(backupDir, `backup_${timestampStr}.json`);
+    
+    fs.writeFileSync(backupFilePath, JSON.stringify(dbBackup, (key, value) =>
+      typeof value === 'bigint' ? Number(value) : value
+    , 2));
+    
+    console.log(`Database backup saved to ${backupFilePath}`);
+    
+    // === SYSTEM RESET ===
+    
     // Save to history if requested
     if (saveHistory) {
       const saveResult = await saveElectionToHistory();
@@ -141,7 +180,7 @@ export async function resetVotingSystem(saveHistory: boolean = true): Promise<{ 
     
     await connection.commit();
     
-    return { success: true, message: 'Voting system reset successfully' };
+    return { success: true, message: 'Voting system reset and database backed up successfully' };
   } catch (error) {
     await connection.rollback();
     throw error;

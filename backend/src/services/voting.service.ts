@@ -7,6 +7,12 @@
 
 import { query, queryOne, execute } from '../db';
 import type { VotingConfig, VotingStatus } from '../types';
+import { getOrSetCache, invalidateCache } from './cache.service';
+
+const CACHE_KEYS = {
+  CONFIG: 'voting:config',
+  STATUS: 'voting:status'
+};
 
 // Convert ISO/Date string to MariaDB DATETIME format (UTC)
 function toMariaDbDateTime(dateString: string): string {
@@ -29,42 +35,52 @@ function toMariaDbDateTime(dateString: string): string {
  * Get current voting configuration
  */
 export async function getVotingConfig(): Promise<VotingConfig | null> {
-  return queryOne<VotingConfig>('SELECT * FROM voting LIMIT 1');
+  return getOrSetCache(
+    CACHE_KEYS.CONFIG,
+    60, // Cache for 60 seconds
+    async () => queryOne<VotingConfig>('SELECT * FROM voting LIMIT 1')
+  );
 }
 
 /**
  * Get voting status (for frontend display)
  */
 export async function getVotingStatus(): Promise<VotingStatus> {
-  const config = await getVotingConfig();
-  
-  if (!config) {
-    return {
-      title: 'No Election Configured',
-      startDate: '',
-      endDate: '',
-      isActive: false,
-      hasStarted: false,
-      hasEnded: false,
-    };
-  }
-  
-  const now = new Date();
-  const startDate = new Date(config.vot_start_date);
-  const endDate = new Date(config.vot_end_date);
-  
-  const hasStarted = now >= startDate;
-  const hasEnded = now > endDate;
-  const isActive = hasStarted && !hasEnded;
-  
-  return {
-    title: config.voting_title,
-    startDate: config.vot_start_date,
-    endDate: config.vot_end_date,
-    isActive,
-    hasStarted,
-    hasEnded,
-  };
+  return getOrSetCache(
+    CACHE_KEYS.STATUS,
+    15, // Cache for 15 seconds (slightly shorter as it checks current time)
+    async () => {
+      const config = await getVotingConfig();
+      
+      if (!config) {
+        return {
+          title: 'No Election Configured',
+          startDate: '',
+          endDate: '',
+          isActive: false,
+          hasStarted: false,
+          hasEnded: false,
+        };
+      }
+      
+      const now = new Date();
+      const startDate = new Date(config.vot_start_date);
+      const endDate = new Date(config.vot_end_date);
+      
+      const hasStarted = now >= startDate;
+      const hasEnded = now > endDate;
+      const isActive = hasStarted && !hasEnded;
+      
+      return {
+        title: config.voting_title,
+        startDate: config.vot_start_date,
+        endDate: config.vot_end_date,
+        isActive,
+        hasStarted,
+        hasEnded,
+      };
+    }
+  );
 }
 
 /**
@@ -97,9 +113,16 @@ export async function updateVotingSchedule(
       'INSERT INTO voting (id, voting_title, vot_start_date, vot_end_date) VALUES (1, ?, ?, ?) ON DUPLICATE KEY UPDATE vot_start_date = VALUES(vot_start_date), vot_end_date = VALUES(vot_end_date)',
       ['Election', start, end]
     );
-    return insert.affectedRows > 0;
+    if (insert.affectedRows > 0) {
+      await invalidateCache(CACHE_KEYS.CONFIG);
+      await invalidateCache(CACHE_KEYS.STATUS);
+      return true;
+    }
+    return false;
   }
 
+  await invalidateCache(CACHE_KEYS.CONFIG);
+  await invalidateCache(CACHE_KEYS.STATUS);
   return true;
 }
 
@@ -119,9 +142,16 @@ export async function updateVotingTitle(title: string): Promise<boolean> {
       'INSERT INTO voting (id, voting_title, vot_start_date, vot_end_date) VALUES (1, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE voting_title = VALUES(voting_title)',
       [title]
     );
-    return insert.affectedRows > 0;
+    if (insert.affectedRows > 0) {
+      await invalidateCache(CACHE_KEYS.CONFIG);
+      await invalidateCache(CACHE_KEYS.STATUS);
+      return true;
+    }
+    return false;
   }
 
+  await invalidateCache(CACHE_KEYS.CONFIG);
+  await invalidateCache(CACHE_KEYS.STATUS);
   return true;
 }
 
@@ -132,5 +162,10 @@ export async function updateLastReset(): Promise<boolean> {
   const result = await execute(
     'UPDATE voting SET last_reset = NOW() WHERE id = 1'
   );
-  return result.affectedRows > 0;
+  if (result.affectedRows > 0) {
+    await invalidateCache(CACHE_KEYS.CONFIG);
+    await invalidateCache(CACHE_KEYS.STATUS);
+    return true;
+  }
+  return false;
 }

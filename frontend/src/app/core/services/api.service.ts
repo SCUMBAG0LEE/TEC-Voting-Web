@@ -48,6 +48,10 @@ export class ApiService {
     return this.http.post<ApiResponse<{ token: string; message: string }>>(`${this.apiUrl}/voter/vote`, { candidateId, fingerprint, deviceInfo });
   }
 
+  getVoterResults(): Observable<ApiResponse<{ candidates: any[]; totalVotes: number }>> {
+    return this.http.get<ApiResponse<{ candidates: any[]; totalVotes: number }>>(`${this.apiUrl}/voter/results`);
+  }
+
   // =====================================================
   // ADMIN AUTH ENDPOINTS
   // =====================================================

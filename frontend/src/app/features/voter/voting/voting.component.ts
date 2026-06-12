@@ -30,13 +30,32 @@ import { environment } from '../../../../environments/environment';
       <main class="voting-main">
         @if (!votingStatus()?.isActive) {
           <div class="voting-closed">
-            <div class="icon">🚫</div>
-            <h2>Voting is Currently Closed</h2>
-            <p>Please check back during the voting period.</p>
-            @if (votingStatus()?.startDate && votingStatus()?.endDate) {
-              <p class="schedule">
-                Scheduled: {{ votingStatus()?.startDate | date:'medium' }} - {{ votingStatus()?.endDate | date:'medium' }}
-              </p>
+            @if (votingStatus()?.hasEnded) {
+              <div class="icon">🏁</div>
+              <h2>Voting has Concluded</h2>
+              <p>The voting period has officially ended.</p>
+              @if (hasVoted()) {
+                <button class="btn-primary" (click)="viewResults()">View Results</button>
+              } @else {
+                <p>You did not participate in this election.</p>
+              }
+            } @else if (!votingStatus()?.hasStarted) {
+              <div class="icon">⏳</div>
+              <h2>Voting Starts Soon</h2>
+              <p>The voting period has not yet begun. Please check back later.</p>
+              @if (votingStatus()?.startDate) {
+                <div class="schedule-banner">
+                  <h3>Next Voting Schedule:</h3>
+                  <p class="schedule">
+                    <strong>{{ votingStatus()?.startDate | date:'fullDate' }}</strong><br>
+                    {{ votingStatus()?.startDate | date:'shortTime' }} - {{ votingStatus()?.endDate | date:'shortTime' }}
+                  </p>
+                </div>
+              }
+            } @else {
+              <div class="icon">🚫</div>
+              <h2>Voting is Currently Closed</h2>
+              <p>Please check back during the voting period.</p>
             }
           </div>
         } @else if (hasVoted()) {
@@ -101,6 +120,17 @@ import { environment } from '../../../../environments/environment';
     />
   `,
   styles: [`
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulseSoft {
+      0% { transform: scale(1); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+      50% { transform: scale(1.02); box-shadow: 0 15px 25px rgba(102, 126, 234, 0.5); }
+      100% { transform: scale(1); box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3); }
+    }
+
     .voting-container {
       min-height: 100vh;
       background: #f3f4f6;
@@ -163,6 +193,7 @@ import { environment } from '../../../../environments/environment';
       background: white;
       border-radius: 16px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      animation: fadeInUp 0.5s ease-out forwards;
       
       .icon {
         font-size: 4rem;
@@ -180,8 +211,37 @@ import { environment } from '../../../../environments/environment';
       
       .schedule {
         margin-top: 1rem;
-        font-size: 0.9rem;
-        color: #9ca3af;
+        font-weight: 500;
+        color: #4b5563;
+      }
+      
+      .schedule-banner {
+        margin-top: 2rem;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: inline-block;
+        text-align: center;
+        
+        h3 {
+          margin: 0 0 0.5rem;
+          color: #166534;
+          font-size: 1.1rem;
+        }
+        
+        .schedule {
+          margin: 0;
+          color: #15803d;
+          font-size: 1.25rem;
+          
+          strong {
+            font-size: 1.5rem;
+            color: #16a34a;
+            display: block;
+            margin-bottom: 0.25rem;
+          }
+        }
       }
     }
     
@@ -228,9 +288,18 @@ import { environment } from '../../../../environments/environment';
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
       overflow: hidden;
       cursor: pointer;
-      transition: all 0.3s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       border: 3px solid transparent;
       position: relative;
+      opacity: 0;
+      animation: fadeInUp 0.5s ease-out forwards;
+      
+      &:nth-child(1) { animation-delay: 0.1s; }
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.3s; }
+      &:nth-child(4) { animation-delay: 0.4s; }
+      &:nth-child(5) { animation-delay: 0.5s; }
+      &:nth-child(6) { animation-delay: 0.6s; }
       
       &:hover {
         transform: translateY(-4px);
@@ -323,19 +392,21 @@ import { environment } from '../../../../environments/environment';
     }
     
     .btn-vote {
-      background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: white;
       border: none;
       padding: 1rem 3rem;
-      border-radius: 12px;
-      font-size: 1.1rem;
-      font-weight: 600;
+      border-radius: 9999px;
+      font-size: 1.25rem;
+      font-weight: 700;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s;
+      box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+      animation: pulseSoft 2s infinite ease-in-out;
       
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 15px 30px rgba(16, 185, 129, 0.4);
       }
     }
     
@@ -480,8 +551,11 @@ export class VotingComponent implements OnInit {
   }
   
   viewResults() {
-    // Navigate to results page (could be implemented later)
-    this.toastService.info('Results will be available after voting ends');
+    if (this.votingStatus()?.hasEnded) {
+      this.router.navigate(['/voted']);
+    } else {
+      this.toastService.info('Results will be available after voting ends');
+    }
   }
   
   logout() {

@@ -19,7 +19,7 @@ import {
   getVotingStatus, 
   isVotingActive 
 } from '../services/voting.service';
-import { getAllCandidatesPublic } from '../services/candidate.service';
+import { getAllCandidatesPublic, getVoteTally } from '../services/candidate.service';
 
 export const voterRoutes = new Elysia({ prefix: '/voter' })
   .use(jwtPlugin)
@@ -189,6 +189,46 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
     };
   }, {
     body: voteSchema,
+  })
+  
+  // Protected: Get results (only after voting ends)
+  .get('/results', async ({ jwt, request, set }) => {
+    const voter = await getVoterFromRequest(jwt, request);
+    if (!voter) {
+      set.status = 401;
+      return { success: false, error: 'Unauthorized: Voter authentication required' };
+    }
+    
+    // Check if voting has ended
+    const status = await getVotingStatus();
+    if (!status.hasEnded) {
+      set.status = 403;
+      return {
+        success: false,
+        error: 'Results are only available after the voting period has officially ended.',
+      };
+    }
+    
+    // Check if voter has voted
+    const hasVoted = await hasVoterVoted(voter.nim);
+    if (!hasVoted) {
+      set.status = 403;
+      return {
+        success: false,
+        error: 'Only voters who participated can view the results.',
+      };
+    }
+    
+    const tally = await getVoteTally();
+    const totalVotes = tally.reduce((sum, c) => sum + c.votes, 0);
+    
+    return {
+      success: true,
+      data: {
+        candidates: tally,
+        totalVotes,
+      },
+    };
   })
   
   // Protected: Logout (client-side should discard token)

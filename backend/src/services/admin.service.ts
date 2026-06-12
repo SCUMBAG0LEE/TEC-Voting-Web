@@ -10,6 +10,11 @@ import { query, queryOne, execute } from '../db';
 import type { Admin, AdminResponse, DashboardStats } from '../types';
 import { getTotalVoters, getVotedCount } from './voter.service';
 import { getTotalCandidates } from './candidate.service';
+import { getOrSetCache } from './cache.service';
+
+const CACHE_KEYS = {
+  DASHBOARD_STATS: 'admin:dashboard_stats'
+};
 
 const SALT_ROUNDS = 10;
 
@@ -76,22 +81,28 @@ export async function verifyAdminCredentials(
  * Get dashboard statistics
  */
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const [totalVoters, totalCandidates, votersVoted] = await Promise.all([
-    getTotalVoters(),
-    getTotalCandidates(),
-    getVotedCount(),
-  ]);
-  
-  const participationRate = totalVoters > 0
-    ? Math.round((votersVoted / totalVoters) * 1000) / 10
-    : 0;
-  
-  return {
-    totalVoters,
-    totalCandidates,
-    votersVoted,
-    participationRate,
-  };
+  return getOrSetCache(
+    CACHE_KEYS.DASHBOARD_STATS,
+    5, // Cache for 5 seconds to prevent spamming DB but keep it real-time
+    async () => {
+      const [totalVoters, totalCandidates, votersVoted] = await Promise.all([
+        getTotalVoters(),
+        getTotalCandidates(),
+        getVotedCount(),
+      ]);
+      
+      const participationRate = totalVoters > 0
+        ? Math.round((votersVoted / totalVoters) * 1000) / 10
+        : 0;
+      
+      return {
+        totalVoters,
+        totalCandidates,
+        votersVoted,
+        participationRate,
+      };
+    }
+  );
 }
 
 /**

@@ -13,6 +13,7 @@ import { existsSync } from 'fs';
 
 import { config } from './config';
 import { testConnection } from './db';
+import { initRedis } from './services/cache.service';
 import { voterRoutes, adminRoutes, candidateRoutes, uploadRoutes } from './routes';
 
 // Create main Elysia app
@@ -169,6 +170,9 @@ app.listen(config.server.port);
   } catch (e) {
     console.log('⚠️  Server running without database connection - API calls requiring DB will fail');
   }
+  
+  // Init optional redis cache
+  initRedis();
 })();
 
 export type App = typeof app;

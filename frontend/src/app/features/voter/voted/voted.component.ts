@@ -1,7 +1,8 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { AuthService } from '../../../core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AuthService, ApiService } from '../../../core';
 
 @Component({
   selector: 'app-voted',
@@ -36,6 +37,30 @@ import { AuthService } from '../../../core';
             Logout
           </button>
         </div>
+        
+        @if (showResults()) {
+          <div class="results-section">
+            <h2 class="results-title">🏆 Final Election Results</h2>
+            <div class="results-list">
+              @for (candidate of results(); track candidate.id; let i = $index) {
+                <div class="result-item" [class.winner]="i === 0">
+                  <div class="rank">{{ i + 1 }}</div>
+                  <div class="candidate-details">
+                    <span class="name">{{ candidate.name }}</span>
+                    <div class="progress-bar-container">
+                      <div class="progress-bar" [style.width.%]="candidate.percentage"></div>
+                    </div>
+                  </div>
+                  <div class="stats">
+                    <span class="percentage">{{ candidate.percentage }}%</span>
+                    <span class="votes">{{ candidate.votes }} votes</span>
+                  </div>
+                </div>
+              }
+            </div>
+            <p class="total-votes">Total Valid Votes: {{ totalVotes() }}</p>
+          </div>
+        }
         
         <p class="timestamp">
           Vote recorded at: {{ timestamp | date:'medium' }}
@@ -156,6 +181,127 @@ import { AuthService } from '../../../core';
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      margin-bottom: 2rem;
+    }
+    
+    .results-section {
+      text-align: left;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 1.5rem;
+      border: 1px solid #e2e8f0;
+      animation: slideUp 0.5s ease;
+    }
+    
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes slideInRight {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    .results-title {
+      font-size: 1.25rem;
+      color: #1f2937;
+      margin-top: 0;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+    
+    .result-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border-left: 4px solid #cbd5e1;
+      opacity: 0;
+      animation: slideInRight 0.5s ease-out forwards;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      
+      &:hover {
+        transform: translateX(4px);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      }
+      
+      &:nth-child(1) { animation-delay: 0.1s; }
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.3s; }
+      &:nth-child(4) { animation-delay: 0.4s; }
+      &:nth-child(5) { animation-delay: 0.5s; }
+      &:nth-child(6) { animation-delay: 0.6s; }
+      
+      &.winner {
+        border-left-color: #fbbf24;
+        background: #fffbeb;
+      }
+    }
+    
+    .rank {
+      font-weight: bold;
+      font-size: 1.25rem;
+      color: #64748b;
+      min-width: 24px;
+    }
+    
+    .winner .rank { color: #d97706; }
+    
+    .candidate-details {
+      flex: 1;
+      
+      .name {
+        font-weight: 600;
+        color: #1e293b;
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+    }
+    
+    .progress-bar-container {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #60a5fa, #3b82f6);
+      border-radius: 4px;
+      transition: width 1s ease-out;
+    }
+    
+    .winner .progress-bar {
+      background: linear-gradient(90deg, #fcd34d, #f59e0b);
+    }
+    
+    .stats {
+      text-align: right;
+      min-width: 70px;
+      
+      .percentage {
+        display: block;
+        font-weight: bold;
+        color: #0f172a;
+      }
+      
+      .votes {
+        font-size: 0.8rem;
+        color: #64748b;
+      }
+    }
+    
+    .total-votes {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #64748b;
+      margin: 1rem 0 0;
     }
     
     .btn-primary {
@@ -257,15 +403,40 @@ export class VotedComponent implements OnInit {
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
+  private apiService = inject(ApiService);
+  private destroyRef = inject(DestroyRef);
   
   candidateName = signal('');
   timestamp = new Date();
   confettiPieces = Array.from({ length: 10 }, (_, i) => i);
   
+  showResults = signal(false);
+  results = signal<any[]>([]);
+  totalVotes = signal(0);
+  
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
-      this.candidateName.set(params['candidate'] || 'your chosen candidate');
+      if (params['candidate']) {
+        this.candidateName.set(params['candidate']);
+      }
     });
+    
+    // Check if results are available (will only return 200 if voting has ended)
+    this.apiService.getVoterResults()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.results.set(response.data.candidates);
+            this.totalVotes.set(response.data.totalVotes);
+            this.showResults.set(true);
+            this.candidateName.set('your chosen candidate'); // Fallback if navigated directly
+          }
+        },
+        error: () => {
+          // Normal - voting hasn't ended yet
+        }
+      });
   }
   
   goHome() {
