@@ -113,7 +113,9 @@ NewTECVotingWeb/
 │   │   ├── routes/         # API endpoints
 │   │   ├── services/       # Business logic
 │   │   ├── types/          # TypeScript definitions
+│   │   ├── utils/          # Helper functions
 │   │   └── index.ts        # Entry point
+│   ├── db_backups/         # Database backups
 │   ├── uploads/            # Uploaded files
 │   ├── .env.example        # Environment template
 │   └── README.md           # Backend documentation

@@ -55,17 +55,16 @@ A modern backend API for the Tarumanagara English Club Online Voting System, bui
 
 4. **Create an admin user (manual bootstrap):**
    ```bash
-   python - <<'PY'
-import bcrypt
-from getpass import getpass
-email = input('Admin email: ').strip()
-pwd = getpass('Admin password: ')
-hash_ = bcrypt.hashpw(pwd.encode(), bcrypt.gensalt(rounds=10)).decode()
-print('\nSQL:')
-print(f"INSERT INTO admin (name, email, password) VALUES ('Admin', '{email}', '{hash_}')\n"
-      f"ON DUPLICATE KEY UPDATE password = VALUES(password);")
-PY
-   # run the printed SQL against your database
+   cat << 'EOF' > setup-admin.ts
+   const password = prompt('Enter admin password: ');
+   if (!password) process.exit(1);
+   const hash = await Bun.password.hash(password, { algorithm: "bcrypt", cost: 10 });
+   console.log(`\nRun this SQL against your database:`);
+   console.log(`INSERT INTO admin (name, email, password) VALUES ('Admin', 'admin@example.com', '${hash}') ON DUPLICATE KEY UPDATE password = VALUES(password);`);
+   EOF
+   
+   bun run setup-admin.ts
+   rm setup-admin.ts
    ```
 
 5. **Build for production:**
@@ -84,6 +83,7 @@ backend/
 │   ├── routes/         # API endpoint definitions (admin, voter, etc.)
 │   ├── services/       # Core business logic (voting, history, cache, etc.)
 │   ├── types/          # Shared TypeScript interfaces
+│   ├── utils/          # Helper functions (e.g., auth helpers)
 │   └── index.ts        # Server entry point & CORS configuration
 ├── db_backups/         # Auto-generated JSON database snapshots
 ├── uploads/            # Candidate photos and static assets
