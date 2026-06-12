@@ -154,8 +154,8 @@ export class VoterLoginComponent implements OnInit {
     if (!this.voterNim.trim() || this.isLoadingVoter()) return;
     this.isLoadingVoter.set(true);
     
-    let token = '';
-    let provider = '';
+    let token: string | undefined = undefined;
+    let provider: string | undefined = undefined;
     
     if (this.showVoterCaptcha()) {
       token = this.getCaptchaToken('voter');
@@ -191,8 +191,8 @@ export class VoterLoginComponent implements OnInit {
     if (!this.adminEmail.trim() || !this.adminPassword || this.isLoadingAdmin()) return;
     this.isLoadingAdmin.set(true);
 
-    let token = '';
-    let provider = '';
+    let token: string | undefined = undefined;
+    let provider: string | undefined = undefined;
     
     if (this.showAdminCaptcha()) {
       token = this.getCaptchaToken('admin');

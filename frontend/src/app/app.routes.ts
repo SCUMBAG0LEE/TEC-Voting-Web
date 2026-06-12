@@ -26,12 +26,7 @@ export const routes: Routes = [
   },
   
   // Admin routes
-  {
-    path: 'admin/login',
-    canActivate: [guestGuard],
-    loadComponent: () => import('./features/admin/login/admin-login.component')
-      .then(m => m.AdminLoginComponent)
-  },
+
   {
     path: 'admin',
     canActivate: [adminGuard],

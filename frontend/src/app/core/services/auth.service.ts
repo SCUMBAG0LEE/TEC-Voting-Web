@@ -124,7 +124,7 @@ export class AuthService {
     if (userType === 'voter') {
       this.router.navigate(['/login']);
     } else if (userType === 'admin') {
-      this.router.navigate(['/admin/login']);
+      this.router.navigate(['/login']);
     }
   }
 

@@ -27,7 +27,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         authService.logout();
         
         if (userType === 'admin') {
-          router.navigate(['/admin/login']);
+          router.navigate(['/login']);
         } else {
           router.navigate(['/login']);
         }

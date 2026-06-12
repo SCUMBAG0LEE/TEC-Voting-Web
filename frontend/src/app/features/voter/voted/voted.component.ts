@@ -85,8 +85,10 @@ import { FooterComponent } from '../../../shared';
       justify-content: center;
       background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
       padding: 1rem;
+      padding-bottom: 80px; /* Space for absolute footer */
       position: relative;
-      overflow: hidden;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
     
     .voted-card {
