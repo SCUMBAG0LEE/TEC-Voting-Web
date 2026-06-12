@@ -2,7 +2,7 @@ import { Component, OnInit, inject, signal, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ApiService, AuthService } from '../../../core';
+import { ApiService, AuthService, FingerprintService } from '../../../core';
 import { Candidate, VotingStatus } from '../../../core/models';
 import { LoadingComponent, ToastService, ConfirmModalComponent } from '../../../shared';
 import { environment } from '../../../../environments/environment';
@@ -355,6 +355,7 @@ import { environment } from '../../../../environments/environment';
 export class VotingComponent implements OnInit {
   authService = inject(AuthService);
   private apiService = inject(ApiService);
+  private fingerprintService = inject(FingerprintService);
   private toastService = inject(ToastService);
   private router = inject(Router);
   
@@ -438,36 +439,44 @@ export class VotingComponent implements OnInit {
       .substring(0, 2);
   }
   
-  confirmVote() {
+  async confirmVote() {
     this.showConfirmModal = false;
     const candidate = this.selectedCandidate();
     if (!candidate) return;
     
     this.isLoading.set(true);
-    
-    this.apiService.castVote(candidate.id)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response) => {
-          if (response.success) {
-            // Update token if provided
-            if (response.data?.token) {
-              this.authService.updateVoterToken(response.data.token);
+
+    try {
+      // Collect device fingerprint before casting vote
+      const { fingerprint, deviceInfo } = await this.fingerprintService.getDeviceFingerprint();
+
+      this.apiService.castVote(candidate.id, fingerprint, deviceInfo)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              // Update token if provided
+              if (response.data?.token) {
+                this.authService.updateVoterToken(response.data.token);
+              }
+              this.toastService.success('Vote cast successfully!');
+              this.router.navigate(['/voted'], { 
+                queryParams: { candidate: candidate.name } 
+              });
+            } else {
+              this.toastService.error(response.error || 'Failed to cast vote');
             }
-            this.toastService.success('Vote cast successfully!');
-            this.router.navigate(['/voted'], { 
-              queryParams: { candidate: candidate.name } 
-            });
-          } else {
-            this.toastService.error(response.error || 'Failed to cast vote');
+            this.isLoading.set(false);
+          },
+          error: (error) => {
+            this.toastService.error(error.error?.error || 'Failed to cast vote');
+            this.isLoading.set(false);
           }
-          this.isLoading.set(false);
-        },
-        error: (error) => {
-          this.toastService.error(error.error?.error || 'Failed to cast vote');
-          this.isLoading.set(false);
-        }
-      });
+        });
+    } catch (fpError) {
+      this.toastService.error('Failed to verify device. Please try again.');
+      this.isLoading.set(false);
+    }
   }
   
   viewResults() {

@@ -6,7 +6,8 @@
  */
 
 import { query, queryOne, execute, getConnection } from '../db';
-import type { Voter, VoterResponse, Candidate } from '../types';
+import type { Voter, VoterResponse, Candidate, DeviceInfo } from '../types';
+import { hasDeviceVoted, registerDeviceVote } from './device.service';
 
 /**
  * Find voter by NIM
@@ -26,8 +27,21 @@ export async function hasVoterVoted(nim: string): Promise<boolean> {
 /**
  * Cast a vote
  * Uses transaction to ensure atomicity
+ * Checks device fingerprint to prevent multi-voting from same device
  */
-export async function castVote(nim: string, candidateId: number): Promise<{ success: boolean; message: string }> {
+export async function castVote(
+  nim: string,
+  candidateId: number,
+  fingerprint: string,
+  deviceInfo: DeviceInfo,
+  ipAddress: string
+): Promise<{ success: boolean; message: string }> {
+  // Check device fingerprint before starting transaction
+  const deviceAlreadyVoted = await hasDeviceVoted(fingerprint);
+  if (deviceAlreadyVoted) {
+    return { success: false, message: 'This device has already been used to vote' };
+  }
+
   const connection = await getConnection();
   
   try {
@@ -75,6 +89,15 @@ export async function castVote(nim: string, candidateId: number): Promise<{ succ
     );
     
     await connection.commit();
+
+    // Register device vote AFTER commit (outside transaction, non-critical)
+    try {
+      await registerDeviceVote(fingerprint, deviceInfo, ipAddress);
+    } catch (deviceError) {
+      // Log but don't fail the vote if device registration fails
+      console.warn('Failed to register device vote:', deviceError);
+    }
+
     return { success: true, message: 'Vote cast successfully' };
     
   } catch (error) {

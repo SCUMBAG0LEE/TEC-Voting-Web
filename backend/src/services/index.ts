@@ -8,3 +8,4 @@ export * from './candidate.service';
 export * from './admin.service';
 export * from './voting.service';
 export * from './history.service';
+export * from './device.service';

@@ -196,3 +196,54 @@ export interface VoteTally {
   candidates: CandidateResult[];
   totalVotes: number;
 }
+
+// =====================================================
+// DEVICE FINGERPRINT TYPES
+// =====================================================
+export interface DeviceInfo {
+  userAgent: string;
+  platform: string;
+  language: string;
+  languages: string[];
+  screenResolution: string;
+  colorDepth: number;
+  devicePixelRatio: number;
+  timezone: string;
+  hardwareConcurrency: number;
+  deviceMemory: number | null;
+  maxTouchPoints: number;
+  webglRenderer: string;
+  webglVendor: string;
+  canvasHash: string;
+  audioHash: string;
+  cookieEnabled: boolean;
+  doNotTrack: string | null;
+  webdriver: boolean;
+  pdfViewerEnabled: boolean;
+  connectionType: string | null;
+  connectionDownlink: number | null;
+  viewportWidth: number;
+  viewportHeight: number;
+  fonts: string[];
+}
+
+export interface DeviceVote {
+  id: number;
+  fingerprint: string;
+  user_agent: string | null;
+  platform: string | null;
+  language: string | null;
+  languages: string | null;
+  screen_resolution: string | null;
+  color_depth: number | null;
+  device_pixel_ratio: number | null;
+  timezone: string | null;
+  hardware_concurrency: number | null;
+  device_memory: number | null;
+  max_touch_points: number | null;
+  webgl_renderer: string | null;
+  webgl_vendor: string | null;
+  ip_address: string | null;
+  device_data: string; // JSON string
+  voted_at: string;
+}

@@ -133,6 +133,9 @@ export async function resetVotingSystem(saveHistory: boolean = true): Promise<{ 
     // Reset all voters' vote status
     await connection.query('UPDATE voters SET vote = 0');
     
+    // Clear device fingerprint records
+    await connection.query('DELETE FROM device_votes');
+    
     // Update last reset timestamp
     await connection.query('UPDATE voting SET last_reset = NOW()');
     

@@ -44,8 +44,8 @@ export class ApiService {
     return this.http.get<ApiResponse<CandidatesResponse>>(`${this.apiUrl}/voter/candidates`);
   }
 
-  castVote(candidateId: number): Observable<ApiResponse<{ token: string; message: string }>> {
-    return this.http.post<ApiResponse<{ token: string; message: string }>>(`${this.apiUrl}/voter/vote`, { candidateId });
+  castVote(candidateId: number, fingerprint: string, deviceInfo: any): Observable<ApiResponse<{ token: string; message: string }>> {
+    return this.http.post<ApiResponse<{ token: string; message: string }>>(`${this.apiUrl}/voter/vote`, { candidateId, fingerprint, deviceInfo });
   }
 
   // =====================================================

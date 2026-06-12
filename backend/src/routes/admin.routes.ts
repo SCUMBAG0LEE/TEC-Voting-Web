@@ -42,6 +42,7 @@ import {
   getAllElectionHistory,
   deleteElectionHistory,
 } from '../services/history.service';
+import { resetDeviceVotes } from '../services/device.service';
 
 export const adminRoutes = new Elysia({ prefix: '/admin' })
   .use(jwtPlugin)
@@ -349,17 +350,18 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     })),
   })
   
-  // Reset only voters (clear vote status)
+  // Reset only voters (clear vote status + device fingerprints)
   .post('/reset/voters', async ({ jwt, request, set }) => {
     const admin = await getAdminFromRequest(jwt, request);
     const authError = requireAdmin(admin, set);
     if (authError) return authError;
     
     const count = await resetAllVoters();
+    await resetDeviceVotes();
     
     return {
       success: true,
-      message: `Reset vote status for ${count} voters`,
+      message: `Reset vote status for ${count} voters and cleared device records`,
     };
   })
   

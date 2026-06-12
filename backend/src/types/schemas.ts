@@ -17,11 +17,44 @@ export const voterLoginSchema = t.Object({
   }),
 });
 
+export const deviceInfoSchema = t.Object({
+  userAgent: t.String(),
+  platform: t.String(),
+  language: t.String(),
+  languages: t.Array(t.String()),
+  screenResolution: t.String(),
+  colorDepth: t.Number(),
+  devicePixelRatio: t.Number(),
+  timezone: t.String(),
+  hardwareConcurrency: t.Number(),
+  deviceMemory: t.Union([t.Number(), t.Null()]),
+  maxTouchPoints: t.Number(),
+  webglRenderer: t.String(),
+  webglVendor: t.String(),
+  canvasHash: t.String(),
+  audioHash: t.String(),
+  cookieEnabled: t.Boolean(),
+  doNotTrack: t.Union([t.String(), t.Null()]),
+  webdriver: t.Boolean(),
+  pdfViewerEnabled: t.Boolean(),
+  connectionType: t.Union([t.String(), t.Null()]),
+  connectionDownlink: t.Union([t.Number(), t.Null()]),
+  viewportWidth: t.Number(),
+  viewportHeight: t.Number(),
+  fonts: t.Array(t.String()),
+});
+
 export const voteSchema = t.Object({
   candidateId: t.Number({ 
     minimum: 1,
     error: 'Invalid candidate ID'
   }),
+  fingerprint: t.String({
+    minLength: 1,
+    maxLength: 64,
+    error: 'Device fingerprint is required',
+  }),
+  deviceInfo: deviceInfoSchema,
 });
 
 // =====================================================

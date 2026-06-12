@@ -136,7 +136,7 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
       return { success: false, error: 'Unauthorized: Voter authentication required' };
     }
     
-    const { candidateId } = body;
+    const { candidateId, fingerprint, deviceInfo } = body;
     
     // Check if voting is active
     const active = await isVotingActive();
@@ -157,9 +157,14 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
         error: 'You have already voted',
       };
     }
+
+    // Extract IP address from request
+    const forwarded = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    const ipAddress = forwarded?.split(',')[0]?.trim() || realIp || 'unknown';
     
-    // Cast vote
-    const result = await castVote(voter.nim, candidateId);
+    // Cast vote with device fingerprint
+    const result = await castVote(voter.nim, candidateId, fingerprint, deviceInfo, ipAddress);
     
     if (!result.success) {
       set.status = 400;
