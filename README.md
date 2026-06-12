@@ -10,6 +10,7 @@ A modern, full-stack electronic voting system for the Tarumanagara English Club,
 ## ✨ Features
 
 - 🗳️ **Secure Voting** - One vote per voter with atomic transactions
+- 💻 **Device Fingerprinting** - Prevents multi-voting from the same browser/device while preserving anonymity
 - 🔐 **JWT Authentication** - Separate auth flows for voters and admins
 - 🔒 **Password Security** - Bcrypt hashing with auto-upgrade from legacy
 - 🚦 **Rate Limiting** - Protection against brute force attacks (5 login attempts/min)
@@ -270,6 +271,7 @@ server {
 - **SQL Injection Prevention** via parameterized queries
 - **Input Validation** using TypeBox schemas
 - **Double-Vote Prevention** with database constraints
+- **Device Fingerprinting** to block multiple votes from the same device
 - **Transaction Isolation** for atomic vote operations
 
 For detailed security documentation, see [SECURITY.md](./SECURITY.md)

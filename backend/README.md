@@ -18,6 +18,7 @@ A modern backend API for the Tarumanagara English Club Online Voting System, bui
 - 🔒 **Bcrypt Passwords** - Secure password hashing with auto-upgrade from plain text
 - 🚦 **Rate Limiting** - Protection against brute force attacks (5 req/min on login)
 - 🗳️ **Secure Voting** - Atomic transactions, double-vote prevention
+- 💻 **Device Fingerprinting** - Prevents multi-voting from the same browser/device
 - 👥 **Voter Management** - Add, delete, bulk import, pagination, search
 - 👤 **Candidate Management** - CRUD with photo upload support
 - 📊 **Live Vote Tallying** - Real-time results with percentages
@@ -393,6 +394,29 @@ CREATE TABLE election_history (
   end_date DATETIME,
   candidates_data JSON,
   saved_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Device Fingerprints table (prevents multi-voting)
+CREATE TABLE device_votes (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  fingerprint VARCHAR(64) NOT NULL UNIQUE,
+  user_agent TEXT,
+  platform VARCHAR(64),
+  language VARCHAR(16),
+  languages VARCHAR(255),
+  screen_resolution VARCHAR(20),
+  color_depth INT,
+  device_pixel_ratio FLOAT,
+  timezone VARCHAR(64),
+  hardware_concurrency INT,
+  device_memory FLOAT,
+  max_touch_points INT,
+  webgl_renderer VARCHAR(255),
+  webgl_vendor VARCHAR(255),
+  ip_address VARCHAR(45),
+  device_data JSON,
+  voted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_fingerprint (fingerprint)
 );
 ```
 
