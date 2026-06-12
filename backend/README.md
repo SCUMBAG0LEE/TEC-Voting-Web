@@ -112,6 +112,8 @@ Create a `.env` file based on `.env.example`:
 | `REDIS_HOST` | Redis host | (optional) |
 | `REDIS_PORT` | Redis port | `6379` |
 | `REDIS_PASSWORD`| Redis password | (optional) |
+| `RECAPTCHA_SECRET_KEY` | Google reCAPTCHA v2 Secret Key | (optional test key) |
+| `HCAPTCHA_SECRET_KEY` | hCaptcha Secret Key | (optional test key) |
 
 ### CORS Configuration
 

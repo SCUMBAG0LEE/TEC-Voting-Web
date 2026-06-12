@@ -101,6 +101,8 @@ export const environment = {
   apiUrl: 'http://localhost:3000/api',  // Change this
   staticUrl: 'http://localhost:3000/static',
   appName: 'TEC Online Voting',
+  recaptchaSiteKey: '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI', // Google test key
+  hcaptchaSiteKey: '10000000-ffff-ffff-ffff-000000000001', // hCaptcha test key
 };
 ```
 
@@ -114,6 +116,8 @@ export const environment = {
   apiUrl: 'https://api.example.com/api',  // Your backend API URL
   staticUrl: 'https://api.example.com/static',
   appName: 'TEC Online Voting',
+  recaptchaSiteKey: 'your_production_recaptcha_site_key_here',
+  hcaptchaSiteKey: 'your_production_hcaptcha_site_key_here',
 };
 ```
 

@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ApiService, AuthService } from '../../../core';
 import { ToastService, FooterComponent } from '../../../shared';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-voter-login',
@@ -108,9 +109,9 @@ export class VoterLoginComponent implements OnInit {
   private toastService = inject(ToastService);
   private router = inject(Router);
 
-  // Captcha Keys (Test keys)
-  recaptchaSiteKey = '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';
-  hcaptchaSiteKey = '10000000-ffff-ffff-ffff-000000000001';
+  // Captcha Keys
+  recaptchaSiteKey = environment.recaptchaSiteKey;
+  hcaptchaSiteKey = environment.hcaptchaSiteKey;
 
   isSignupMode = signal(false); // false = Voter, true = Admin
 
