@@ -74,18 +74,17 @@ import { FooterComponent } from '../../../shared';
         }
       </div>
       
-      <app-footer class="dark-bg" style="position: absolute; bottom: 0; width: 100%; z-index: 2;"></app-footer>
+      <app-footer class="dark-bg" style="width: 100%; z-index: 2; margin-top: auto;"></app-footer>
     </div>
   `,
   styles: [`
     .voted-container {
       min-height: 100vh;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
       background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-      padding: 1rem;
-      padding-bottom: 80px; /* Space for absolute footer */
+      padding: 2rem 1rem 0 1rem; /* Top padding, side padding. Bottom padding handled by footer */
       position: relative;
       overflow-y: auto;
       overflow-x: hidden;
@@ -99,6 +98,7 @@ import { FooterComponent } from '../../../shared';
       text-align: center;
       max-width: 500px;
       width: 100%;
+      margin: auto; /* Vertically and horizontally centers in flex container */
       position: relative;
       z-index: 1;
     }

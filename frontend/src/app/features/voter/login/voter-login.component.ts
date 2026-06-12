@@ -151,7 +151,12 @@ export class VoterLoginComponent implements OnInit {
   // --- Auth Logic ---
 
   async onSubmitVoter() {
-    if (!this.voterNim.trim() || this.isLoadingVoter()) return;
+    if (!this.voterNim.trim() || this.voterNim.trim().length !== 9 || this.isLoadingVoter()) {
+      if (this.voterNim.trim().length > 0 && this.voterNim.trim().length !== 9) {
+        this.toastService.warning('NIM must be exactly 9 digits');
+      }
+      return;
+    }
     this.isLoadingVoter.set(true);
     
     let token: string | undefined = undefined;
@@ -265,9 +270,19 @@ export class VoterLoginComponent implements OnInit {
 
   private renderCaptchas(type: 'voter' | 'admin') {
     const w = window as any;
+    
+    // Check if we already rendered a captcha for this type. If so, just reset it.
+    if (this.recaptchaWidgetIds[type] !== undefined || this.hcaptchaWidgetIds[type] !== undefined) {
+      this.resetCaptchas(type);
+      return;
+    }
+
     try {
       if (w.grecaptcha && this.recaptchaLoaded) {
-        this.recaptchaWidgetIds[type] = w.grecaptcha.render(`${type}-recaptcha`, { sitekey: this.recaptchaSiteKey });
+        const el = document.getElementById(`${type}-recaptcha`);
+        if (el && !el.hasChildNodes()) {
+          this.recaptchaWidgetIds[type] = w.grecaptcha.render(`${type}-recaptcha`, { sitekey: this.recaptchaSiteKey });
+        }
       } else {
         throw new Error("reCAPTCHA not available");
       }
@@ -280,8 +295,15 @@ export class VoterLoginComponent implements OnInit {
       // Render hCaptcha when loaded
       const checkAndRenderHcaptcha = setInterval(() => {
         if (w.hcaptcha && this.hcaptchaLoaded) {
-          this.hcaptchaWidgetIds[type] = w.hcaptcha.render(`${type}-hcaptcha`, { sitekey: this.hcaptchaSiteKey });
-          clearInterval(checkAndRenderHcaptcha);
+          clearInterval(checkAndRenderHcaptcha); // Clear FIRST to avoid infinite loops on error
+          try {
+            const el = document.getElementById(`${type}-hcaptcha`);
+            if (el && !el.hasChildNodes() && this.hcaptchaWidgetIds[type] === undefined) {
+              this.hcaptchaWidgetIds[type] = w.hcaptcha.render(`${type}-hcaptcha`, { sitekey: this.hcaptchaSiteKey });
+            }
+          } catch(err) {
+            console.error("hCaptcha render error", err);
+          }
         }
       }, 500);
     }
@@ -290,9 +312,9 @@ export class VoterLoginComponent implements OnInit {
   private getCaptchaToken(type: 'voter' | 'admin'): string {
     const w = window as any;
     if (document.getElementById(`${type}-recaptcha`)!.style.display !== 'none' && w.grecaptcha) {
-      return w.grecaptcha.getResponse();
+      return this.recaptchaWidgetIds[type] !== undefined ? w.grecaptcha.getResponse(this.recaptchaWidgetIds[type]) : w.grecaptcha.getResponse();
     } else if (w.hcaptcha) {
-      return w.hcaptcha.getResponse();
+      return this.hcaptchaWidgetIds[type] !== undefined ? w.hcaptcha.getResponse(this.hcaptchaWidgetIds[type]) : w.hcaptcha.getResponse();
     }
     return '';
   }
