@@ -28,8 +28,8 @@ export class ApiService {
   // VOTER AUTH ENDPOINTS
   // =====================================================
   
-  loginVoter(nim: string): Observable<ApiResponse<VoterLoginResponse>> {
-    return this.http.post<ApiResponse<VoterLoginResponse>>(`${this.apiUrl}/voter/login`, { nim });
+  loginVoter(nim: string, captchaToken?: string, captchaProvider?: string): Observable<ApiResponse<VoterLoginResponse>> {
+    return this.http.post<ApiResponse<VoterLoginResponse>>(`${this.apiUrl}/voter/login`, { nim, captchaToken, captchaProvider });
   }
 
   getVotingStatus(): Observable<ApiResponse<VotingStatus>> {
@@ -56,8 +56,8 @@ export class ApiService {
   // ADMIN AUTH ENDPOINTS
   // =====================================================
   
-  loginAdmin(email: string, password: string): Observable<ApiResponse<AdminLoginResponse>> {
-    return this.http.post<ApiResponse<AdminLoginResponse>>(`${this.apiUrl}/admin/login`, { email, password });
+  loginAdmin(email: string, password: string, captchaToken?: string, captchaProvider?: string): Observable<ApiResponse<AdminLoginResponse>> {
+    return this.http.post<ApiResponse<AdminLoginResponse>>(`${this.apiUrl}/admin/login`, { email, password, captchaToken, captchaProvider });
   }
 
   getDashboard(): Observable<ApiResponse<DashboardData>> {

@@ -31,10 +31,34 @@ const getClientIP = (request: Request | undefined, server: any): string => {
 };
 
 /**
- * Rate limiter for authentication endpoints
+ * Rate limiter for Voter authentication endpoints
+ * Allows 10 attempts per minute per IP
+ */
+export const voterAuthRateLimiter = new Elysia({ name: 'voter-auth-rate-limiter' })
+  .use(
+    rateLimit({
+      duration: 60000, // 1 minute window
+      max: 10, // 10 requests per window
+      generator: getClientIP,
+      errorResponse: new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Too many login attempts. Please try again later.' 
+        }),
+        { 
+          status: 429, 
+          headers: { 'Content-Type': 'application/json' } 
+        }
+      ),
+      skip: (req) => req.method !== 'POST',
+    })
+  );
+
+/**
+ * Rate limiter for Admin authentication endpoints
  * Allows 5 attempts per minute per IP
  */
-export const authRateLimiter = new Elysia({ name: 'auth-rate-limiter' })
+export const adminAuthRateLimiter = new Elysia({ name: 'admin-auth-rate-limiter' })
   .use(
     rateLimit({
       duration: 60000, // 1 minute window
@@ -50,10 +74,7 @@ export const authRateLimiter = new Elysia({ name: 'auth-rate-limiter' })
           headers: { 'Content-Type': 'application/json' } 
         }
       ),
-      skip: (req) => {
-        // Only apply to POST requests (login attempts)
-        return req.method !== 'POST';
-      },
+      skip: (req) => req.method !== 'POST',
     })
   );
 

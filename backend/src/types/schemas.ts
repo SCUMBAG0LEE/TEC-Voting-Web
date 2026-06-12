@@ -15,6 +15,8 @@ export const voterLoginSchema = t.Object({
     pattern: '^[0-9]{9}$',
     error: 'NIM must be exactly 9 digits'
   }),
+  captchaToken: t.Optional(t.String()),
+  captchaProvider: t.Optional(t.Union([t.Literal('recaptcha'), t.Literal('hcaptcha')])),
 });
 
 export const deviceInfoSchema = t.Object({
@@ -99,12 +101,14 @@ export const candidateUpdateSchema = t.Object({
 export const adminLoginSchema = t.Object({
   email: t.String({ 
     format: 'email',
-    error: 'Valid email is required'
+    error: 'Valid email address is required'
   }),
   password: t.String({ 
     minLength: 1,
     error: 'Password is required'
   }),
+  captchaToken: t.Optional(t.String()),
+  captchaProvider: t.Optional(t.Union([t.Literal('recaptcha'), t.Literal('hcaptcha')])),
 });
 
 // =====================================================

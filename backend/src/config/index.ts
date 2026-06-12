@@ -52,6 +52,12 @@ export const config = {
     port: parseInt(process.env.REDIS_PORT || '6379'),
     password: process.env.REDIS_PASSWORD || '',
   },
+  
+  // Captcha
+  captcha: {
+    recaptchaSecret: process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe', // Test Key
+    hcaptchaSecret: process.env.HCAPTCHA_SECRET_KEY || '0x0000000000000000000000000000000000000000', // Test Key
+  }
 };
 
 /**

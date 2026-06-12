@@ -13,7 +13,8 @@ A modern, full-stack electronic voting system for the Tarumanagara English Club,
 - 💻 **Device Fingerprinting** - Prevents multi-voting from the same browser/device while preserving anonymity
 - 🔐 **JWT Authentication** - Separate auth flows for voters and admins
 - 🔒 **Password Security** - Bcrypt hashing with auto-upgrade from legacy
-- 🚦 **Rate Limiting** - Protection against brute force attacks (5 login attempts/min)
+- 🤖 **Progressive Captcha** - Multi-tiered login security with reCAPTCHA v2 and hCaptcha fallback
+- 🚦 **Strict Rate Limiting** - IP-based lockouts after repeated failed authentication attempts
 - 🛡️ **Input Validation** - Strict schema validation on all endpoints
 - 🗂️ **Path Traversal Protection** - Secure file serving with directory confinement
 - 💉 **SQL Injection Prevention** - Parameterized queries throughout
@@ -265,9 +266,10 @@ server {
 
 ## 🔒 Security Features
 
+- **Progressive Captcha Verification** (reCAPTCHA with hCaptcha fallback)
 - **JWT Authentication** with configurable expiration
 - **Bcrypt Password Hashing** (cost factor 10)
-- **Rate Limiting** on auth endpoints (5 req/min per IP)
+- **Strict Rate Limiting** against brute-force attacks via IP lockouts
 - **CORS Protection** with configurable origins
 - **Path Traversal Prevention** on file uploads
 - **SQL Injection Prevention** via parameterized queries

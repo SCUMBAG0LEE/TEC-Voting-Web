@@ -2,6 +2,7 @@
 export * from './components/loading/loading.component';
 export * from './components/toast/toast.component';
 export * from './components/confirm-modal/confirm-modal.component';
+export * from './components/footer/footer.component';
 
 // Services
 export * from './services/toast.service';

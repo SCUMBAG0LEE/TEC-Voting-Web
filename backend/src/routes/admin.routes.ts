@@ -7,7 +7,7 @@
 
 import { Elysia, t } from 'elysia';
 import { jwtPlugin, generateAdminToken } from '../middleware/auth';
-import { authRateLimiter } from '../middleware/rate-limit';
+import { adminAuthRateLimiter } from '../middleware/rate-limit';
 import { getAdminFromRequest, requireAdmin } from '../utils';
 import { 
   adminLoginSchema, 
@@ -43,23 +43,62 @@ import {
   deleteElectionHistory,
 } from '../services/history.service';
 import { resetDeviceVotes } from '../services/device.service';
+import { 
+  getFailedAttempts, 
+  incrementFailedAttempts, 
+  resetFailedAttempts, 
+  verifyCaptcha 
+} from '../services/auth.service';
 
 export const adminRoutes = new Elysia({ prefix: '/admin' })
   .use(jwtPlugin)
   
   // Public: Admin login (rate limited)
-  .use(authRateLimiter)
-  .post('/login', async ({ body, jwt, set }) => {
-    const { email, password } = body;
+  .use(adminAuthRateLimiter)
+  .post('/login', async ({ body, jwt, set, request }) => {
+    const { email, password, captchaToken, captchaProvider } = body;
+    
+    // Extract IP address from request
+    const forwarded = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    const ipAddress = forwarded?.split(',')[0]?.trim() || realIp || 'unknown';
+
+    // Check failed attempts
+    const failedAttempts = await getFailedAttempts(ipAddress);
+    
+    // Admin threshold is 3 attempts before requiring Captcha
+    if (failedAttempts >= 3) {
+      if (!captchaToken) {
+        set.status = 403;
+        return {
+          success: false,
+          error: 'REQUIRE_CAPTCHA',
+          message: 'Too many failed attempts. Please complete the captcha.',
+        };
+      }
+
+      const isCaptchaValid = await verifyCaptcha(captchaToken, ipAddress, captchaProvider || 'recaptcha');
+      if (!isCaptchaValid) {
+        set.status = 400;
+        return {
+          success: false,
+          error: 'Invalid Captcha. Please try again.',
+        };
+      }
+    }
     
     const admin = await verifyAdminCredentials(email, password);
     if (!admin) {
+      await incrementFailedAttempts(ipAddress);
       set.status = 401;
       return {
         success: false,
         error: 'Invalid email or password',
       };
     }
+    
+    // Login successful
+    await resetFailedAttempts(ipAddress);
     
     const token = await generateAdminToken(jwt, {
       id: admin.id,

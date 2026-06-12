@@ -7,7 +7,7 @@
 
 import { Elysia } from 'elysia';
 import { jwtPlugin, generateVoterToken } from '../middleware/auth';
-import { authRateLimiter } from '../middleware/rate-limit';
+import { voterAuthRateLimiter } from '../middleware/rate-limit';
 import { voterLoginSchema, voteSchema } from '../types/schemas';
 import { getVoterFromRequest, requireVoter } from '../utils';
 import {
@@ -20,6 +20,12 @@ import {
   isVotingActive 
 } from '../services/voting.service';
 import { getAllCandidatesPublic, getVoteTally } from '../services/candidate.service';
+import { 
+  getFailedAttempts, 
+  incrementFailedAttempts, 
+  resetFailedAttempts, 
+  verifyCaptcha 
+} from '../services/auth.service';
 
 export const voterRoutes = new Elysia({ prefix: '/voter' })
   .use(jwtPlugin)
@@ -34,19 +40,52 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
   })
   
   // Public: Voter login (rate limited)
-  .use(authRateLimiter)
-  .post('/login', async ({ body, jwt, set }) => {
-    const { nim } = body;
+  .use(voterAuthRateLimiter)
+  .post('/login', async ({ body, jwt, set, request }) => {
+    const { nim, captchaToken, captchaProvider } = body;
+    
+    // Extract IP address from request
+    const forwarded = request.headers.get('x-forwarded-for');
+    const realIp = request.headers.get('x-real-ip');
+    const ipAddress = forwarded?.split(',')[0]?.trim() || realIp || 'unknown';
+
+    // Check failed attempts
+    const failedAttempts = await getFailedAttempts(ipAddress);
+    
+    // Voter threshold is 5 attempts before requiring Captcha
+    if (failedAttempts >= 5) {
+      if (!captchaToken) {
+        set.status = 403;
+        return {
+          success: false,
+          error: 'REQUIRE_CAPTCHA',
+          message: 'Too many failed attempts. Please complete the captcha.',
+        };
+      }
+
+      const isCaptchaValid = await verifyCaptcha(captchaToken, ipAddress, captchaProvider || 'recaptcha');
+      if (!isCaptchaValid) {
+        set.status = 400;
+        return {
+          success: false,
+          error: 'Invalid Captcha. Please try again.',
+        };
+      }
+    }
     
     // Find voter
     const voter = await findVoterByNim(nim);
     if (!voter) {
+      await incrementFailedAttempts(ipAddress);
       set.status = 401;
       return {
         success: false,
         error: 'NIM not registered. Please contact admin.',
       };
     }
+    
+    // Login successful
+    await resetFailedAttempts(ipAddress);
     
     // Generate token
     const token = await generateVoterToken(jwt, {

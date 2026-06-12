@@ -26,7 +26,11 @@ This document outlines the core security implementations within the architecture
 - **Auto-Migration Pipeline**: The system includes a legacy password migration pipeline. If an old admin logs in using a legacy plaintext password, the system intercepts the login, automatically hashes the password using Bcrypt, updates the database, and issues the token.
 
 ### 5. Network & API Protection
-- **Rate Limiting**: The system implements rigorous rate limiting via `elysia-rate-limit`. Authentication endpoints (`/api/admin/login`, `/api/voter/login`) are restricted to a maximum of **5 requests per minute per IP** to neutralize brute-force and dictionary attacks.
+- **Progressive Captcha Verification**: The system employs a dynamic, multi-tiered security perimeter for login attempts:
+  - Initial attempts are frictionless to preserve UX.
+  - After a low threshold of failed attempts (e.g., 3 for admins, 5 for voters), the system enforces Captcha verification.
+  - The frontend utilizes a dual-provider fallback architecture, primarily requesting Google reCAPTCHA v2, and seamlessly failing over to hCaptcha if Google services are unavailable or quota is exceeded.
+- **Strict Rate Limiting**: If an attacker bypasses or completes the Captcha but continues to fail authentication (e.g., 5 total failures for admins, 10 for voters), the system implements rigorous IP-based rate limiting via `elysia-rate-limit`, completely locking out the IP address to neutralize brute-force and dictionary attacks.
 - **Strict CORS**: Cross-Origin Resource Sharing (CORS) is explicitly restricted to designated origins configured in the `.env` (e.g., `CORS_ORIGIN=http://localhost:4200`). This mitigates CSRF attacks.
 
 ### 6. Vulnerability & Error Handling

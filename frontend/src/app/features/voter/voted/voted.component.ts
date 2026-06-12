@@ -3,11 +3,12 @@ import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService, ApiService } from '../../../core';
+import { FooterComponent } from '../../../shared';
 
 @Component({
   selector: 'app-voted',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FooterComponent],
   template: `
     <div class="voted-container">
       <div class="voted-card">
@@ -72,6 +73,8 @@ import { AuthService, ApiService } from '../../../core';
           <div class="confetti-piece" [style.--delay]="item + 's'" [style.--position]="item * 10 + '%'"></div>
         }
       </div>
+      
+      <app-footer class="dark-bg" style="position: absolute; bottom: 0; width: 100%; z-index: 2;"></app-footer>
     </div>
   `,
   styles: [`

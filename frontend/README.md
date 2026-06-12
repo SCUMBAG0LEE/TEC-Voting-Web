@@ -216,7 +216,7 @@ For most use cases, the current approach is simpler and recommended.
 
 ## 🏗️ Project Structure
 
-```
+```text
 src/
 ├── app/
 │   ├── core/                    # Core module
@@ -228,20 +228,18 @@ src/
 │   ├── features/                # Feature modules
 │   │   ├── admin/               # Admin pages
 │   │   │   ├── candidates/      # Candidate management
+│   │   │   ├── components/      # Admin shared components (e.g. sidebar)
 │   │   │   ├── config/          # Voting configuration
 │   │   │   ├── dashboard/       # Admin dashboard
 │   │   │   ├── history/         # Election history
-│   │   │   ├── layout/          # Admin layout wrapper
 │   │   │   ├── login/           # Admin login
 │   │   │   └── voters/          # Voter management
-│   │   ├── home/                # Landing page
 │   │   └── voter/               # Voter pages
-│   │       ├── layout/          # Voter layout wrapper
-│   │       ├── login/           # Voter login
+│   │       ├── login/           # Unified Login Interface (handles both Voter & Admin)
 │   │       ├── voted/           # Vote confirmation
 │   │       └── voting/          # Voting interface
 │   └── shared/                  # Shared module
-│       ├── components/          # Reusable UI components
+│       ├── components/          # Reusable UI components (e.g. Toast, Footer)
 │       └── services/            # Shared utilities
 ├── environments/                # Environment configs
 └── styles.scss                  # Global styles

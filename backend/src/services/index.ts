@@ -9,3 +9,4 @@ export * from './admin.service';
 export * from './voting.service';
 export * from './history.service';
 export * from './device.service';
+export * from './auth.service';

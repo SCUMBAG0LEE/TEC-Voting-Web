@@ -4,13 +4,13 @@ import { Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService, AuthService, FingerprintService } from '../../../core';
 import { Candidate, VotingStatus } from '../../../core/models';
-import { LoadingComponent, ToastService, ConfirmModalComponent } from '../../../shared';
+import { LoadingComponent, ToastService, ConfirmModalComponent, FooterComponent } from '../../../shared';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-voting',
   standalone: true,
-  imports: [CommonModule, LoadingComponent, ConfirmModalComponent],
+  imports: [CommonModule, LoadingComponent, ConfirmModalComponent, FooterComponent],
   template: `
     @if (isLoading()) {
       <app-loading [fullscreen]="true" message="Loading voting data..." />
@@ -69,6 +69,12 @@ import { environment } from '../../../../environments/environment';
           <div class="voting-instructions">
             <h2>Select Your Candidate</h2>
             <p>Click on a candidate card to select, then confirm your vote.</p>
+            @if (votingStatus()?.endDate) {
+              <div class="end-date-banner">
+                <span class="pulse-dot"></span>
+                <strong>Voting ends on:</strong> {{ votingStatus()?.endDate | date:'fullDate' }} at {{ votingStatus()?.endDate | date:'shortTime' }}
+              </div>
+            }
           </div>
           
           <div class="candidates-grid">
@@ -108,6 +114,8 @@ import { environment } from '../../../../environments/environment';
         }
       </main>
     </div>
+    
+    <app-footer></app-footer>
     
     <app-confirm-modal
       [isOpen]="showConfirmModal"
@@ -265,14 +273,38 @@ import { environment } from '../../../../environments/environment';
     .voting-instructions {
       text-align: center;
       margin-bottom: 2rem;
+      animation: fadeInUp 0.5s ease-out;
       
       h2 {
+        font-size: 1.75rem;
         color: #1f2937;
         margin-bottom: 0.5rem;
       }
       
       p {
         color: #6b7280;
+      }
+      
+      .end-date-banner {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 9999px;
+        color: #b45309;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 6px -1px rgba(251, 191, 36, 0.1);
+        
+        .pulse-dot {
+          width: 8px;
+          height: 8px;
+          background-color: #ef4444;
+          border-radius: 50%;
+          animation: pulseSoft 2s infinite;
+        }
       }
     }
     
