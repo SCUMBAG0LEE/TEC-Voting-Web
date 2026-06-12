@@ -36,16 +36,23 @@ export async function castVote(
   deviceInfo: DeviceInfo,
   ipAddress: string
 ): Promise<{ success: boolean; message: string }> {
-  // Check device fingerprint before starting transaction
-  const deviceAlreadyVoted = await hasDeviceVoted(fingerprint);
-  if (deviceAlreadyVoted) {
-    return { success: false, message: 'This device has already been used to vote' };
-  }
-
   const connection = await getConnection();
   
   try {
     await connection.beginTransaction();
+
+    // Register device vote FIRST inside transaction.
+    // If fingerprint exists, it will throw ER_DUP_ENTRY, blocking the transaction.
+    try {
+      await registerDeviceVote(fingerprint, deviceInfo, ipAddress, connection);
+    } catch (deviceError: any) {
+      await connection.rollback();
+      if (deviceError.code === 'ER_DUP_ENTRY') {
+        return { success: false, message: 'This device has already been used to vote' };
+      }
+      console.warn('Failed to register device vote:', deviceError);
+      return { success: false, message: 'Internal error registering device' };
+    }
     
     // Check if voter exists and hasn't voted
     const voterRows = await connection.query(
@@ -89,14 +96,6 @@ export async function castVote(
     );
     
     await connection.commit();
-
-    // Register device vote AFTER commit (outside transaction, non-critical)
-    try {
-      await registerDeviceVote(fingerprint, deviceInfo, ipAddress);
-    } catch (deviceError) {
-      // Log but don't fail the vote if device registration fails
-      console.warn('Failed to register device vote:', deviceError);
-    }
 
     return { success: true, message: 'Vote cast successfully' };
     

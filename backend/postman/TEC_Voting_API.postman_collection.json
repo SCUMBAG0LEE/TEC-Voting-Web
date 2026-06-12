@@ -165,7 +165,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"candidateId\": {{candidateId}}\n}"
+              "raw": "{\n  \"candidateId\": {{candidateId}},\n  \"fingerprint\": \"mock_fingerprint_postman_123\",\n  \"deviceInfo\": {\n    \"userAgent\": \"PostmanRuntime/7.36.1\",\n    \"platform\": \"Win32\",\n    \"language\": \"en-US\",\n    \"languages\": [\"en-US\", \"en\"],\n    \"screenResolution\": \"1920x1080\",\n    \"colorDepth\": 24,\n    \"devicePixelRatio\": 1.5,\n    \"timezone\": \"Asia/Jakarta\",\n    \"hardwareConcurrency\": 8,\n    \"deviceMemory\": 16,\n    \"maxTouchPoints\": 0,\n    \"webglRenderer\": \"Mock Renderer\",\n    \"webglVendor\": \"Mock Vendor\",\n    \"canvasHash\": \"canvas_hash_mock\",\n    \"audioHash\": \"audio_hash_mock\",\n    \"cookieEnabled\": true,\n    \"doNotTrack\": null,\n    \"webdriver\": false,\n    \"pdfViewerEnabled\": true,\n    \"connectionType\": \"wifi\",\n    \"connectionDownlink\": 10,\n    \"viewportWidth\": 1920,\n    \"viewportHeight\": 1080,\n    \"fonts\": [\"Arial\", \"Roboto\"]\n  }\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/voter/vote",

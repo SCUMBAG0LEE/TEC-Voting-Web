@@ -28,34 +28,40 @@ export async function hasDeviceVoted(fingerprint: string): Promise<boolean> {
 export async function registerDeviceVote(
   fingerprint: string,
   deviceInfo: DeviceInfo,
-  ipAddress: string
+  ipAddress: string,
+  connection?: any
 ): Promise<void> {
-  await execute(
-    `INSERT INTO device_votes 
+  const queryStr = `INSERT INTO device_votes 
      (fingerprint, user_agent, platform, language, languages, 
       screen_resolution, color_depth, device_pixel_ratio, timezone,
       hardware_concurrency, device_memory, max_touch_points,
       webgl_renderer, webgl_vendor, ip_address, device_data)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [
-      fingerprint,
-      deviceInfo.userAgent || null,
-      deviceInfo.platform || null,
-      deviceInfo.language || null,
-      deviceInfo.languages ? deviceInfo.languages.join(',') : null,
-      deviceInfo.screenResolution || null,
-      deviceInfo.colorDepth ?? null,
-      deviceInfo.devicePixelRatio ?? null,
-      deviceInfo.timezone || null,
-      deviceInfo.hardwareConcurrency ?? null,
-      deviceInfo.deviceMemory ?? null,
-      deviceInfo.maxTouchPoints ?? null,
-      deviceInfo.webglRenderer || null,
-      deviceInfo.webglVendor || null,
-      ipAddress || null,
-      JSON.stringify(deviceInfo),
-    ]
-  );
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  
+  const params = [
+    fingerprint,
+    deviceInfo.userAgent || null,
+    deviceInfo.platform || null,
+    deviceInfo.language || null,
+    deviceInfo.languages ? deviceInfo.languages.join(',') : null,
+    deviceInfo.screenResolution || null,
+    deviceInfo.colorDepth ?? null,
+    deviceInfo.devicePixelRatio ?? null,
+    deviceInfo.timezone || null,
+    deviceInfo.hardwareConcurrency ?? null,
+    deviceInfo.deviceMemory ?? null,
+    deviceInfo.maxTouchPoints ?? null,
+    deviceInfo.webglRenderer || null,
+    deviceInfo.webglVendor || null,
+    ipAddress || null,
+    JSON.stringify(deviceInfo),
+  ];
+
+  if (connection) {
+    await connection.query(queryStr, params);
+  } else {
+    await execute(queryStr, params);
+  }
 }
 
 /**
