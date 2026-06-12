@@ -73,6 +73,24 @@ PY
    bun run build
    ```
 
+## 📁 Project Structure
+
+```
+backend/
+├── src/
+│   ├── config/         # Environment variables and configuration logic
+│   ├── db/             # MariaDB connection pool and query helpers
+│   ├── middleware/     # ElysiaJS auth guards & rate limiting modules
+│   ├── routes/         # API endpoint definitions (admin, voter, etc.)
+│   ├── services/       # Core business logic (voting, history, cache, etc.)
+│   ├── types/          # Shared TypeScript interfaces
+│   └── index.ts        # Server entry point & CORS configuration
+├── db_backups/         # Auto-generated JSON database snapshots
+├── uploads/            # Candidate photos and static assets
+├── .env.example        # Environment variable template
+└── package.json        # Bun dependencies and scripts
+```
+
 ## ⚙️ Environment Variables
 
 Create a `.env` file based on `.env.example`:
