@@ -48,9 +48,15 @@ import { LoadingComponent, ToastService, ConfirmModalComponent } from '../../../
         <table class="voters-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>NIM</th>
-              <th>Status</th>
+              <th class="sortable" (click)="toggleSort('no')" [class.active]="sortBy === 'no'">
+                # <span class="sort-icon">{{ getSortIcon('no') }}</span>
+              </th>
+              <th class="sortable" (click)="toggleSort('nim')" [class.active]="sortBy === 'nim'">
+                NIM <span class="sort-icon">{{ getSortIcon('nim') }}</span>
+              </th>
+              <th class="sortable" (click)="toggleSort('vote')" [class.active]="sortBy === 'vote'">
+                Status <span class="sort-icon">{{ getSortIcon('vote') }}</span>
+              </th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -320,6 +326,31 @@ import { LoadingComponent, ToastService, ConfirmModalComponent } from '../../../
         font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        
+        &.sortable {
+          cursor: pointer;
+          user-select: none;
+          transition: all 0.2s;
+          
+          &:hover {
+            background: #f3f4f6;
+            color: #667eea;
+          }
+          
+          &.active {
+            color: #667eea;
+          }
+          
+          .sort-icon {
+            font-size: 0.75rem;
+            margin-left: 0.25rem;
+            opacity: 0.5;
+          }
+          
+          &.active .sort-icon {
+            opacity: 1;
+          }
+        }
       }
       
       td {
@@ -552,6 +583,9 @@ export class AdminVotersComponent implements OnInit {
   currentPage = signal(1);
   itemsPerPage = 20;
   
+  sortBy = 'no';
+  sortOrder: 'asc' | 'desc' = 'asc';
+  
   showAddModal = false;
   showBulkModal = false;
   showDeleteModal = false;
@@ -567,7 +601,7 @@ export class AdminVotersComponent implements OnInit {
   loadVoters() {
     this.isLoading.set(true);
     
-    this.apiService.getVoters(this.currentPage(), this.itemsPerPage, this.searchQuery || undefined)
+    this.apiService.getVoters(this.currentPage(), this.itemsPerPage, this.searchQuery || undefined, this.sortBy, this.sortOrder)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
@@ -583,6 +617,22 @@ export class AdminVotersComponent implements OnInit {
           this.isLoading.set(false);
         }
       });
+  }
+
+  toggleSort(column: string) {
+    if (this.sortBy === column) {
+      this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.sortBy = column;
+      this.sortOrder = 'asc';
+    }
+    this.currentPage.set(1);
+    this.loadVoters();
+  }
+
+  getSortIcon(column: string): string {
+    if (this.sortBy !== column) return '↕';
+    return this.sortOrder === 'asc' ? '↑' : '↓';
   }
 
   searchVoters() {

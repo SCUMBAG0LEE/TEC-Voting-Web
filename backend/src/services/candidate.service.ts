@@ -124,7 +124,7 @@ export async function getTotalCandidates(): Promise<number> {
   const result = await queryOne<{ count: number }>(
     'SELECT COUNT(*) as count FROM candidates'
   );
-  return result?.count || 0;
+  return Number(result?.count || 0);
 }
 
 /**
@@ -132,7 +132,7 @@ export async function getTotalCandidates(): Promise<number> {
  */
 export async function getVoteTally(): Promise<CandidateResult[]> {
   const candidates = await getAllCandidates();
-  const totalVotes = candidates.reduce((sum, c) => sum + c.votes, 0);
+  const totalVotes = candidates.reduce((sum, c) => sum + Number(c.votes), 0);
   
   return candidates.map((c) => ({
     id: c.id,
@@ -141,8 +141,8 @@ export async function getVoteTally(): Promise<CandidateResult[]> {
     major: c.major,
     batch: c.batch,
     photo: c.photo,
-    votes: c.votes,
-    percentage: totalVotes > 0 ? Math.round((c.votes / totalVotes) * 1000) / 10 : 0,
+    votes: Number(c.votes),
+    percentage: totalVotes > 0 ? Math.round((Number(c.votes) / totalVotes) * 1000) / 10 : 0,
   })).sort((a, b) => b.votes - a.votes);
 }
 

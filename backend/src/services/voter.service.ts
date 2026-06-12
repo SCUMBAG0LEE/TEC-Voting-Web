@@ -120,9 +120,20 @@ export async function getAllVoters(): Promise<Voter[]> {
 export async function getVotersPaginated(
   page: number = 1,
   limit: number = 20,
-  search?: string
+  search?: string,
+  sortBy: string = 'no',
+  sortOrder: string = 'asc'
 ): Promise<{ voters: Voter[]; total: number; page: number; totalPages: number }> {
   const offset = (page - 1) * limit;
+  
+  // Whitelist allowed sort columns to prevent SQL injection
+  const allowedSortColumns: Record<string, string> = {
+    'no': 'no',
+    'nim': 'nim',
+    'vote': 'vote',
+  };
+  const safeColumn = allowedSortColumns[sortBy] || 'no';
+  const safeOrder = sortOrder.toLowerCase() === 'desc' ? 'DESC' : 'ASC';
   
   let countSql = 'SELECT COUNT(*) as count FROM voters';
   let dataSql = 'SELECT * FROM voters';
@@ -136,10 +147,10 @@ export async function getVotersPaginated(
     params.push(`%${escapedSearch}%`);
   }
   
-  dataSql += ' ORDER BY no ASC LIMIT ? OFFSET ?';
+  dataSql += ` ORDER BY ${safeColumn} ${safeOrder} LIMIT ? OFFSET ?`;
   
   const countResult = await queryOne<{ count: number }>(countSql, search ? [params[0]] : []);
-  const total = countResult?.count || 0;
+  const total = Number(countResult?.count || 0);
   const totalPages = Math.ceil(total / limit);
   
   const voters = await query<Voter>(dataSql, [...params, limit, offset]);
@@ -154,7 +165,7 @@ export async function getTotalVoters(): Promise<number> {
   const result = await queryOne<{ count: number }>(
     'SELECT COUNT(*) as count FROM voters'
   );
-  return result?.count || 0;
+  return Number(result?.count || 0);
 }
 
 /**
@@ -164,7 +175,7 @@ export async function getVotedCount(): Promise<number> {
   const result = await queryOne<{ count: number }>(
     'SELECT COUNT(*) as count FROM voters WHERE vote = 1'
   );
-  return result?.count || 0;
+  return Number(result?.count || 0);
 }
 
 /**

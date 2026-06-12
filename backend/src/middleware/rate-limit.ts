@@ -9,6 +9,28 @@ import { Elysia } from 'elysia';
 import { rateLimit } from 'elysia-rate-limit';
 
 /**
+ * Custom key generator that extracts client IP from proxy headers
+ * when running behind a reverse proxy (Nginx, Cloudflare, etc.).
+ * Falls back to 'anonymous' as last resort.
+ */
+const getClientIP = (request: Request | undefined, server: any): string => {
+  try {
+    if (!request || !request.headers) {
+      return 'anonymous';
+    }
+
+    return (
+      request.headers.get('cf-connecting-ip') ||       // Cloudflare
+      request.headers.get('x-real-ip') ||              // Nginx
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || // Standard proxy
+      'anonymous'
+    );
+  } catch {
+    return 'anonymous';
+  }
+};
+
+/**
  * Rate limiter for authentication endpoints
  * Allows 5 attempts per minute per IP
  */
@@ -17,6 +39,7 @@ export const authRateLimiter = new Elysia({ name: 'auth-rate-limiter' })
     rateLimit({
       duration: 60000, // 1 minute window
       max: 5, // 5 requests per window
+      generator: getClientIP,
       errorResponse: new Response(
         JSON.stringify({ 
           success: false, 
@@ -43,6 +66,7 @@ export const apiRateLimiter = new Elysia({ name: 'api-rate-limiter' })
     rateLimit({
       duration: 60000, // 1 minute window
       max: 100, // 100 requests per window
+      generator: getClientIP,
       errorResponse: new Response(
         JSON.stringify({ 
           success: false, 

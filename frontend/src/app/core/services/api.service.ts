@@ -68,8 +68,8 @@ export class ApiService {
   // VOTERS MANAGEMENT
   // =====================================================
   
-  getVoters(page = 1, limit = 20, search?: string): Observable<ApiResponse<VotersListResponse>> {
-    let url = `${this.apiUrl}/admin/voters?page=${page}&limit=${limit}`;
+  getVoters(page = 1, limit = 20, search?: string, sortBy = 'no', sortOrder = 'asc'): Observable<ApiResponse<VotersListResponse>> {
+    let url = `${this.apiUrl}/admin/voters?page=${page}&limit=${limit}&sortBy=${sortBy}&sortOrder=${sortOrder}`;
     if (search) url += `&search=${encodeURIComponent(search)}`;
     return this.http.get<ApiResponse<VotersListResponse>>(url);
   }

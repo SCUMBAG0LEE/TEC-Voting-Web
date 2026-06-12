@@ -125,8 +125,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     const page = query.page ? Number(query.page) : 1;
     const limit = query.limit ? Number(query.limit) : 20;
     const search = query.search as string | undefined;
+    const sortBy = (query.sortBy as string) || 'no';
+    const sortOrder = (query.sortOrder as string) || 'asc';
     
-    const result = await getVotersPaginated(page, limit, search);
+    const result = await getVotersPaginated(page, limit, search, sortBy, sortOrder);
     const votedCount = await getVotedCount();
     
     return {
@@ -151,6 +153,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       page: t.Optional(t.String()),
       limit: t.Optional(t.String()),
       search: t.Optional(t.String()),
+      sortBy: t.Optional(t.String()),
+      sortOrder: t.Optional(t.String()),
     }),
   })
   

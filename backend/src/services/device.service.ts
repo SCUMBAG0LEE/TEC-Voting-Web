@@ -17,7 +17,7 @@ export async function hasDeviceVoted(fingerprint: string): Promise<boolean> {
     'SELECT COUNT(*) as count FROM device_votes WHERE fingerprint = ?',
     [fingerprint]
   );
-  return (result?.count ?? 0) > 0;
+  return Number(result?.count ?? 0) > 0;
 }
 
 /**
