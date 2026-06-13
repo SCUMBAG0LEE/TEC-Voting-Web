@@ -140,12 +140,19 @@ NewTECVotingWeb/
 Create `backend/.env`:
 
 ```env
-# Database
+# Database (TCP Connection)
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your_password
 DB_NAME=voting
+
+# Or Database (Unix Socket Connection)
+# DB_SOCKET_PATH=/run/mysqld/mysqld.sock
+
+# Redis Cache (Optional)
+# REDIS_SOCKET_PATH=/run/redis/redis-server.sock
+# REDIS_URL=redis://localhost:6379
 
 # JWT
 JWT_SECRET=your-secure-secret-key

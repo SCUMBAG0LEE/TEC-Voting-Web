@@ -18,9 +18,7 @@ let pool: Pool | null = null;
  */
 function getPool(): Pool {
   if (!pool) {
-    pool = mariadb.createPool({
-      host: config.db.host,
-      port: config.db.port,
+    const dbConfig: mariadb.PoolConfig = {
       user: config.db.user,
       password: config.db.password,
       database: config.db.database,
@@ -30,7 +28,16 @@ function getPool(): Pool {
       insertIdAsNumber: true,
       connectionLimit: 10,
       connectTimeout: 10000, // 10 seconds timeout
-    });
+    };
+
+    if (config.db.socketPath) {
+      dbConfig.socketPath = config.db.socketPath;
+    } else {
+      dbConfig.host = config.db.host;
+      dbConfig.port = config.db.port;
+    }
+
+    pool = mariadb.createPool(dbConfig);
   }
   return pool;
 }

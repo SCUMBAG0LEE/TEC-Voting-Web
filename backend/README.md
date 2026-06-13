@@ -97,6 +97,7 @@ Create a `.env` file based on `.env.example`:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
+| `DB_SOCKET_PATH` | Database Unix Socket | (optional) |
 | `DB_HOST` | Database host | `localhost` |
 | `DB_PORT` | Database port | `3306` |
 | `DB_USER` | Database user | `root` |
@@ -108,6 +109,7 @@ Create a `.env` file based on `.env.example`:
 | `PORT` | Server port | `3000` |
 | `NODE_ENV` | Environment | `development` |
 | `CORS_ORIGIN` | Allowed CORS origin(s) | `http://localhost:4200` |
+| `REDIS_SOCKET_PATH`| Redis Unix Socket | (optional) |
 | `REDIS_URL` | Redis connection URL | (optional) |
 | `REDIS_HOST` | Redis host | (optional) |
 | `REDIS_PORT` | Redis port | `6379` |

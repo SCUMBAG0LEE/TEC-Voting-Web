@@ -20,6 +20,7 @@ if (!isDev) {
 export const config = {
   // Database
   db: {
+    socketPath: (process.env.DB_SOCKET_PATH || '').replace(/^['"]|['"]$/g, '').trim(),
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '3306'),
     user: process.env.DB_USER || 'root',
@@ -47,6 +48,7 @@ export const config = {
   
   // Redis (Optional)
   redis: {
+    socketPath: (process.env.REDIS_SOCKET_PATH || '').replace(/^['"]|['"]$/g, '').trim(),
     url: process.env.REDIS_URL || '',
     host: process.env.REDIS_HOST || '',
     port: parseInt(process.env.REDIS_PORT || '6379'),

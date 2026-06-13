@@ -17,10 +17,14 @@ let isRedisEnabled = false;
  * Initialize Redis connection if configured
  */
 export function initRedis(): void {
-  const { url, host, port, password } = config.redis;
+  const { url, host, port, password, socketPath } = config.redis;
   
   try {
-    if (url) {
+    if (socketPath) {
+      redisClient = new Redis({ path: socketPath, password });
+      isRedisEnabled = true;
+      console.log(`✅ Redis cache enabled (Socket: ${socketPath})`);
+    } else if (url) {
       redisClient = new Redis(url);
       isRedisEnabled = true;
       console.log('✅ Redis cache enabled (URL)');
