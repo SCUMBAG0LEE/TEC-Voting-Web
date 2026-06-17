@@ -1,48 +1,43 @@
 # TEC Online Voting System
 
-A modern, full-stack electronic voting system for the Tarumanagara English Club, rebuilt from PHP to a modern JavaScript/TypeScript stack.
+A modern, ultra-fast, highly-scalable, edge-native electronic voting system for the Tarumanagara English Club. This project has been entirely rewritten into a modern edge architecture for zero-latency performance on Cloudflare infrastructure.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Frontend](https://img.shields.io/badge/frontend-Angular%2021-red.svg)
+![Frontend](https://img.shields.io/badge/frontend-React%20%2B%20Vite-blue.svg)
 ![Backend](https://img.shields.io/badge/backend-Bun%20%2B%20ElysiaJS-orange.svg)
-![Database](https://img.shields.io/badge/database-MariaDB%20%2F%20MySQL-blue.svg)
+![Database](https://img.shields.io/badge/database-Neon%20Serverless%20Postgres-green.svg)
 
 ## ✨ Features
 
-- 🗳️ **Secure Voting** - One vote per voter with atomic transactions
-- 💻 **Device Fingerprinting** - Prevents multi-voting from the same browser/device while preserving anonymity
-- 🔐 **JWT Authentication** - Separate auth flows for voters and admins
-- 🔒 **Password Security** - Bcrypt hashing with auto-upgrade from legacy
-- 🤖 **Progressive Captcha** - Multi-tiered login security with reCAPTCHA v2 and hCaptcha fallback
-- 🚦 **Strict Rate Limiting** - IP-based lockouts after repeated failed authentication attempts
-- 🛡️ **Input Validation** - Strict schema validation on all endpoints
-- 🗂️ **Path Traversal Protection** - Secure file serving with directory confinement
-- 💉 **SQL Injection Prevention** - Parameterized queries throughout
-- 📊 **Live Results** - Real-time vote tallying with percentages
-- 📅 **Scheduled Voting** - Configurable start/end times with auto-activation
-- 📜 **Election History** - Automatic archival of past elections
-- 💾 **Automated Backups** - Full JSON database snapshot generation on system reset
-- 🚀 **Redis Caching** - Optional cache layer for high-performance dashboard and polling
-- 📱 **PWA Support** - Installable on mobile/desktop with offline support
-- 🎨 **Modern UI** - Clean, responsive design with dark gradient theme
+- 🗳️ **Secure Voting** - One vote per voter with atomic Drizzle ORM transactions.
+- 💻 **Forensic Telemetry** - Passive, zero-permission "Smart Logger" capable of Canvas/WebGL hashing, Audio math processing, WebRTC Local IPs, Font arrays, and VPN detection to absolutely prevent multi-voting.
+- 🔐 **JWT Authentication** - Separate auth flows for voters and admins.
+- 🔒 **Zero-Dependency Security** - Native Web Crypto API (PBKDF2) password hashing.
+- 🚀 **Edge Caching** - Cloudflare Hyperdrive global connection pooling.
+- 🛡️ **Edge Rate Limiting** - Cloudflare WAF integration blocking abuse before it hits the backend.
+- 📊 **Live Results** - Real-time vote tallying with percentages.
+- 📅 **Scheduled Voting** - Configurable start/end times with auto-activation.
+- 📜 **Election History** - Automatic archival of past elections.
+- 📱 **PWA Support** - Installable directly on mobile/desktop with offline asset caching.
+- 🎨 **Modern UI** - Clean, responsive design with Chakra UI dark mode and Anime.js cinematic micro-animations.
 
 ## 🏗️ Architecture
 
 ```
-┌─────────────────┐     HTTP/REST      ┌─────────────────┐
+┌─────────────────┐     HTTPS/REST     ┌─────────────────┐
 │                 │ ◄────────────────► │                 │
-│  Angular 21     │                    │  Bun + Elysia   │
-│  (Frontend)     │     JWT Auth       │  (Backend API)  │
+│  React (Vite)   │                    │  Bun + Elysia   │
+│  Cloudflare     │   Eden Treaty      │  Cloudflare     │
+│  Pages (PWA)    │   Type Safety      │  Workers (Edge) │
 │                 │ ◄────────────────► │                 │
 └─────────────────┘                    └────────┬────────┘
-     Port 4200                                  │
-                                                │ mariadb
+     Globally Hosted                            │
+                                                │ Hyperdrive
                                                 ▼
                                     ┌─────────────────────┐
-                                    │  MariaDB / MySQL    │
-                                    │     (Database)      │
+                                    │ Neon Serverless DB  │
+                                    │    (PostgreSQL)     │
                                     └─────────────────────┘
-                                         Port 3306
 ```
 
 ## 🚀 Quick Start
@@ -50,7 +45,8 @@ A modern, full-stack electronic voting system for the Tarumanagara English Club,
 ### Prerequisites
 
 - [Bun](https://bun.sh/) v1.0+ (used for both frontend and backend)
-- MariaDB or MySQL database
+- Cloudflare Account with Hyperdrive enabled
+- Neon.tech Serverless Postgres database
 
 ### 1. Clone the repository
 
@@ -59,16 +55,7 @@ git clone https://github.com/yourusername/tec-voting-system.git
 cd tec-voting-system
 ```
 
-### 2. Set up the database
-
-```sql
--- Create database
-CREATE DATABASE voting;
-
--- Import schema (from OldTECVotingWeb or use the SQL in backend README)
-```
-
-### 3. Start the Backend
+### 2. Start the Backend
 
 ```bash
 cd backend
@@ -78,7 +65,10 @@ bun install
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your database credentials
+# Edit .env with your Neon Database URL and Hyperdrive configurations
+
+# Initialize Database Schema
+bun run db:push
 
 # Start development server
 bun run dev
@@ -87,7 +77,7 @@ bun run dev
 Backend will be available at `http://localhost:3000`
 API documentation at `http://localhost:3000/docs`
 
-### 4. Start the Frontend
+### 3. Start the Frontend
 
 ```bash
 cd frontend
@@ -96,88 +86,38 @@ cd frontend
 bun install
 
 # Start development server
-bun run start
+bun run dev
 ```
 
-Frontend will be available at `http://localhost:4200`
+Frontend will be available at `http://localhost:5173`
 
 ## 📁 Project Structure
 
 ```
-NewTECVotingWeb/
-├── backend/                 # Bun + ElysiaJS API server
+TECVotingWeb/
+├── backend/                 # Bun + ElysiaJS Edge Server
 │   ├── src/
 │   │   ├── config/         # Environment configuration
-│   │   ├── db/             # Database connection
-│   │   ├── middleware/     # Auth & rate limiting
+│   │   ├── db/             # Drizzle ORM schema
 │   │   ├── routes/         # API endpoints
-│   │   ├── services/       # Business logic
-│   │   ├── types/          # TypeScript definitions
+│   │   ├── services/       # Business & validation logic
+│   │   ├── types/          # Valibot schemas
 │   │   ├── utils/          # Helper functions
-│   │   └── index.ts        # Entry point
-│   ├── db_backups/         # Database backups
-│   ├── uploads/            # Uploaded files
+│   │   └── index.ts        # Cloudflare Worker entry point
+│   ├── wrangler.toml       # Cloudflare Workers configuration
 │   ├── .env.example        # Environment template
 │   └── README.md           # Backend documentation
 │
-├── frontend/               # Angular 21 PWA
+├── frontend/               # React + Vite PWA
 │   ├── src/
-│   │   ├── app/
-│   │   │   ├── core/       # Services, guards, interceptors
-│   │   │   ├── features/   # Page components
-│   │   │   └── shared/     # Reusable components
-│   │   ├── environments/   # Environment configs
-│   │   └── styles.scss     # Global styles
+│   │   ├── pages/          # React page components
+│   │   ├── utils/          # Passive fingerprinting telemetry
+│   │   ├── api.ts          # Eden Treaty API Client
+│   │   └── store.ts        # Jotai Atomic State
+│   ├── public/             # PWA manifest and icons
 │   └── README.md           # Frontend documentation
 │
 └── README.md               # This file
-```
-
-## 🔧 Configuration
-
-### Backend Environment Variables
-
-Create `backend/.env`:
-
-```env
-# Database (TCP Connection)
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your_password
-DB_NAME=voting
-
-# Or Database (Unix Socket Connection)
-# DB_SOCKET_PATH=/run/mysqld/mysqld.sock
-
-# Redis Cache (Optional)
-# REDIS_SOCKET_PATH=/run/redis/redis-server.sock
-# REDIS_URL=redis://localhost:6379
-
-# JWT
-JWT_SECRET=your-secure-secret-key
-JWT_EXPIRES_IN=24h
-
-# Server
-PORT=3000
-NODE_ENV=development
-
-# CORS (supports multiple origins)
-CORS_ORIGIN=http://localhost:4200
-# Or: CORS_ORIGIN=http://localhost:4200,https://voting.example.com
-```
-
-### Frontend Environment
-
-Edit `frontend/src/environments/environment.ts` for development:
-
-```typescript
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:3000/api',
-  staticUrl: 'http://localhost:3000/static',
-  appName: 'TEC Online Voting',
-};
 ```
 
 ## 👥 User Roles
@@ -186,7 +126,7 @@ export const environment = {
 - Login with NIM (9-digit student ID)
 - View candidates
 - Cast one vote during active voting period
-- See confirmation after voting
+- Invisible device fingerprinting ensures strict one-vote-per-device compliance
 
 ### Administrators
 - Login with email/password
@@ -197,114 +137,40 @@ export const environment = {
 - View election history
 - Reset voting system
 
-## 📚 API Documentation
-
-Interactive API documentation is available at `http://localhost:3000/docs` when the backend is running.
-
-Key endpoints:
-
-| Endpoint | Description |
-|----------|-------------|
-| `POST /api/voter/login` | Voter authentication |
-| `POST /api/admin/login` | Admin authentication |
-| `GET /api/candidates` | Get all candidates |
-| `POST /api/voter/vote` | Cast a vote |
-| `GET /api/admin/dashboard` | Admin dashboard stats |
-| `GET /api/admin/tally` | Live vote count |
-
-See [Backend README](./backend/README.md) for complete API documentation.
-
 ## 🚀 Production Deployment
 
-### Backend
+### Backend (Cloudflare Workers)
 
 ```bash
 cd backend
-
-# Build
-bun run build
-
-# Set production environment
-export NODE_ENV=production
-export JWT_SECRET=your-very-secure-production-secret
-export CORS_ORIGIN=https://your-frontend-domain.com
-
-# Run
-bun run dist/index.js
+bunx wrangler deploy
 ```
 
-### Frontend
+### Frontend (Cloudflare Pages)
 
 ```bash
 cd frontend
-
-# Build for production
 bun run build
-
-# Output in dist/frontend/browser/
-# Serve with nginx, Apache, or any static file server
-```
-
-### Nginx Example
-
-```nginx
-server {
-    listen 80;
-    server_name voting.example.com;
-
-    # Frontend
-    location / {
-        root /var/www/frontend/dist/frontend/browser;
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Backend API proxy
-    location /api {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    # Static files proxy
-    location /static {
-        proxy_pass http://localhost:3000;
-    }
-}
+bunx wrangler pages deploy dist
 ```
 
 ## 🔒 Security Features
 
-- **Progressive Captcha Verification** (reCAPTCHA with hCaptcha fallback)
-- **JWT Authentication** with configurable expiration
-- **Bcrypt Password Hashing** (cost factor 10)
-- **Strict Rate Limiting** against brute-force attacks via IP lockouts
-- **CORS Protection** with configurable origins
-- **Path Traversal Prevention** on file uploads
-- **SQL Injection Prevention** via parameterized queries
-- **Input Validation** using TypeBox schemas
-- **Double-Vote Prevention** with database constraints
-- **Device Fingerprinting** to block multiple votes from the same device
-- **Transaction Isolation** for atomic vote operations
+- **Advanced "Smart Logger" Telemetry**: Gathers 35+ extreme data points (Audio Hash, WebRTC, Font Arrays, AdBlock detection) without triggering a single browser permission prompt.
+- **Progressive Captcha Verification**: Multi-tiered protection against automated login attacks.
+- **Zero-Dependency Cryptography**: Passwords natively hashed using Web Crypto PBKDF2.
+- **Cloudflare Rate Limiting**: Edge-level firewall drops abusive IPs globally.
+- **CORS Protection**: Edge middleware strictly enforcing whitelisted origins.
+- **SQL Injection Prevention**: Parameterized queries via Drizzle ORM.
+- **Input Validation**: Tree-shakable Valibot schemas dropping malformed requests at the edge.
 
 For detailed security documentation, see [SECURITY.md](./SECURITY.md)
 
 ## 📖 Additional Documentation
 
 - [Backend README](./backend/README.md) - API endpoints, database schema, deployment
-- [Frontend README](./frontend/README.md) - Components, routing, environment config
-- [SECURITY.md](./SECURITY.md) - Security features, threat model, best practices
-
-## 🛠️ Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | Angular 21, TypeScript, SCSS, Bun |
-| Backend | Bun, ElysiaJS, TypeScript |
-| Database | MariaDB / MySQL |
-| Auth | JWT (jsonwebtoken) |
-| Password | bcrypt |
-| API Docs | Swagger / OpenAPI |
+- [Frontend README](./frontend/README.md) - React state, PWA structure, telemetry logic
+- [SECURITY.md](./SECURITY.md) - Core security architecture and threat models
 
 ## 📄 License
 
@@ -312,5 +178,5 @@ MIT License - feel free to use this project for your own voting systems.
 
 ---
 
-**Migrated from**: Legacy PHP voting system  
+**Migrated from**: Legacy Angular/PHP voting system
 **Original Purpose**: Tarumanagara English Club elections

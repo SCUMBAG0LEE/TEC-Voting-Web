@@ -22,7 +22,7 @@ import {
   deleteCandidate,
 } from '../services/candidate.service';
 
-export const candidateRoutes = new Elysia({ prefix: '/candidates' })
+export const candidateRoutes = new Elysia({ aot: false, prefix: '/candidates' })
   .use(jwtPlugin)
   
   // Public: Get all candidates (without vote counts)

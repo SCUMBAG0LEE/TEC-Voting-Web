@@ -2,6 +2,7 @@
 node_modules/
 /backend/node_modules/
 /frontend/node_modules/
+tools/
 
 # Lock files
 package-lock.json
@@ -21,3 +22,12 @@ Thumbs.db
 # Build output
 dist/
 /frontend/dist/
+
+# Cloudflare Wrangler local state
+.wrangler/
+backend/.wrangler/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db

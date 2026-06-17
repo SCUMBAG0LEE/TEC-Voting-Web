@@ -6,8 +6,10 @@
  */
 
 import { Elysia, t } from 'elysia';
+import { db } from '../db';
+import { voting } from '../db/schema';
 import { jwtPlugin, generateAdminToken } from '../middleware/auth';
-import { adminAuthRateLimiter } from '../middleware/rate-limit';
+
 import { getAdminFromRequest, requireAdmin } from '../utils';
 import { 
   adminLoginSchema, 
@@ -34,6 +36,7 @@ import {
   updateVotingSchedule, 
   updateVotingTitle,
   getVotingStatus,
+  updateLiveScoreVisibility,
 } from '../services/voting.service';
 import { getVoteTally, resetAllVotes } from '../services/candidate.service';
 import { 
@@ -41,6 +44,8 @@ import {
   resetVotingSystem,
   getAllElectionHistory,
   deleteElectionHistory,
+  restoreSystemFromJson,
+  generateJsonBackup,
 } from '../services/history.service';
 import { resetDeviceVotes } from '../services/device.service';
 import { 
@@ -49,19 +54,22 @@ import {
   resetFailedAttempts, 
   verifyCaptcha 
 } from '../services/auth.service';
+import { uploadToR2, type Env } from '../services/storage.service';
+import { cloudflareEnvContext } from '../utils/context';
 
-export const adminRoutes = new Elysia({ prefix: '/admin' })
+export const adminRoutes = new Elysia({ aot: false, prefix: '/admin' })
   .use(jwtPlugin)
   
   // Public: Admin login (rate limited)
-  .use(adminAuthRateLimiter)
+
   .post('/login', async ({ body, jwt, set, request }) => {
     const { email, password, captchaToken, captchaProvider } = body;
     
     // Extract IP address from request
+    const cfIp = request.headers.get('cf-connecting-ip');
     const forwarded = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
-    const ipAddress = forwarded?.split(',')[0]?.trim() || realIp || 'unknown';
+    const ipAddress = cfIp || forwarded?.split(',')[0]?.trim() || realIp || '127.0.0.1';
 
     // Check failed attempts
     const failedAttempts = await getFailedAttempts(ipAddress);
@@ -104,6 +112,7 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       id: admin.id,
       email: admin.email,
       name: admin.name,
+      role: admin.role,
     });
     
     return {
@@ -135,9 +144,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     const authError = requireAdmin(admin, set);
     if (authError) return authError;
     
-    const [stats, votingStatus, tally] = await Promise.all([
+    const [stats, votingStatus, votingConfig, tally] = await Promise.all([
       getDashboardStats(),
       getVotingStatus(),
+      getVotingConfig(),
       getVoteTally(),
     ]);
     
@@ -145,7 +155,10 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
       success: true,
       data: {
         stats,
-        votingStatus,
+        votingStatus: {
+          ...votingStatus,
+          config: votingConfig
+        },
         tally,
       },
     };
@@ -187,14 +200,6 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
         },
       },
     };
-  }, {
-    query: t.Object({
-      page: t.Optional(t.String()),
-      limit: t.Optional(t.String()),
-      search: t.Optional(t.String()),
-      sortBy: t.Optional(t.String()),
-      sortOrder: t.Optional(t.String()),
-    }),
   })
   
   // Add single voter
@@ -324,6 +329,22 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     body: votingScheduleSchema,
   })
   
+  // Update live score visibility
+  .put('/voting/live-score', async ({ body, jwt, request, set }) => {
+    const admin = await getAdminFromRequest(jwt, request);
+    const authError = requireAdmin(admin, set);
+    if (authError) return authError;
+    
+    await updateLiveScoreVisibility(body.is_live_score_enabled);
+    
+    return {
+      success: true,
+      message: 'Live score visibility updated successfully',
+    };
+  }, {
+    body: t.Object({ is_live_score_enabled: t.Boolean() }),
+  })
+
   // Update voting title only
   .put('/voting/title', async ({ body, jwt, request, set }) => {
     const admin = await getAdminFromRequest(jwt, request);
@@ -381,7 +402,9 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
     if (authError) return authError;
     
     const saveHistory = body?.saveHistory !== false; // Default true
-    const result = await resetVotingSystem(saveHistory);
+    const deleteVoters = body?.deleteVoters !== false;
+    const deleteCandidates = body?.deleteCandidates !== false;
+    const result = await resetVotingSystem(saveHistory, deleteVoters, deleteCandidates);
     
     return {
       success: result.success,
@@ -390,6 +413,8 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   }, {
     body: t.Optional(t.Object({
       saveHistory: t.Optional(t.Boolean()),
+      deleteVoters: t.Optional(t.Boolean()),
+      deleteCandidates: t.Optional(t.Boolean()),
     })),
   })
   
@@ -425,6 +450,73 @@ export const adminRoutes = new Elysia({ prefix: '/admin' })
   // =====================================================
   // ELECTION HISTORY
   // =====================================================
+  
+  // Backup system to JSON
+  .post('/system/backup', async ({ body, jwt, request, set }) => {
+    const admin = await getAdminFromRequest(jwt, request);
+    const authError = requireAdmin(admin, set);
+    if (authError) return authError;
+    
+    const saveToR2 = body?.saveToR2 === true;
+    if (!saveToR2 && admin.role !== 'owner') {
+      set.status = 403;
+      return { success: false, error: 'Unauthorized: Only system owners can download backups directly.' };
+    }
+
+    const backupData = await generateJsonBackup();
+    const backupJson = JSON.stringify(backupData, null, 2);
+
+    // Option to save to R2
+    if (body?.saveToR2) {
+      const workerEnv = cloudflareEnvContext.getStore() as Env;
+      if (!workerEnv || !workerEnv.STORAGE_BUCKET) {
+        return { success: false, error: 'R2 STORAGE_BUCKET is not configured or bound' };
+      }
+      const filename = `backups/tec-voting-backup-${Date.now()}.json`;
+      const buffer = new TextEncoder().encode(backupJson);
+      await uploadToR2(workerEnv, filename, buffer, 'application/json');
+      return { success: true, message: `Backup successfully saved to R2 as ${filename}` };
+    }
+
+    // Default: return as downloadable file
+    set.headers['Content-Type'] = 'application/json';
+    set.headers['Content-Disposition'] = `attachment; filename="tec-voting-backup-${Date.now()}.json"`;
+    return backupJson;
+  }, {
+    body: t.Optional(t.Object({
+      saveToR2: t.Optional(t.Boolean())
+    }))
+  })
+
+  // Restore system from JSON
+  .post('/system/restore', async ({ body, jwt, request, set }) => {
+    const admin = await getAdminFromRequest(jwt, request);
+    const authError = requireAdmin(admin, set);
+    if (authError) return authError;
+    
+    if (admin.role !== 'owner') {
+      set.status = 403;
+      return { success: false, error: 'Unauthorized: Only system owners can perform this action.' };
+    }
+    
+    // We expect the entire JSON backup payload in the body
+    const result = await restoreSystemFromJson(body);
+    
+    if (!result.success) {
+      set.status = 500;
+      return {
+        success: false,
+        error: result.message,
+      };
+    }
+    
+    return {
+      success: true,
+      message: result.message,
+    };
+  }, {
+    body: t.Any(),
+  })
   
   // Get all election history
   .get('/history', async ({ jwt, request, set }) => {

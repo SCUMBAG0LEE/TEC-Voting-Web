@@ -5,9 +5,12 @@
  * Handles voter authentication and voting
  */
 
-import { Elysia } from 'elysia';
+import { Elysia, t } from 'elysia';
 import { jwtPlugin, generateVoterToken } from '../middleware/auth';
-import { voterAuthRateLimiter } from '../middleware/rate-limit';
+
+import { db } from '../db';
+import { device_votes } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { voterLoginSchema, voteSchema } from '../types/schemas';
 import { getVoterFromRequest, requireVoter } from '../utils';
 import {
@@ -27,7 +30,7 @@ import {
   verifyCaptcha 
 } from '../services/auth.service';
 
-export const voterRoutes = new Elysia({ prefix: '/voter' })
+export const voterRoutes = new Elysia({ aot: false, prefix: '/voter' })
   .use(jwtPlugin)
   
   // Public: Get voting status
@@ -40,14 +43,15 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
   })
   
   // Public: Voter login (rate limited)
-  .use(voterAuthRateLimiter)
+
   .post('/login', async ({ body, jwt, set, request }) => {
     const { nim, captchaToken, captchaProvider } = body;
     
     // Extract IP address from request
+    const cfIp = request.headers.get('cf-connecting-ip');
     const forwarded = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
-    const ipAddress = forwarded?.split(',')[0]?.trim() || realIp || 'unknown';
+    const ipAddress = cfIp || forwarded?.split(',')[0]?.trim() || realIp || '127.0.0.1';
 
     // Check failed attempts
     const failedAttempts = await getFailedAttempts(ipAddress);
@@ -90,7 +94,7 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
     // Generate token
     const token = await generateVoterToken(jwt, {
       nim: voter.nim,
-      hasVoted: voter.vote === 1,
+      hasVoted: Boolean(voter.vote),
     });
     
     return {
@@ -98,7 +102,7 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
       data: {
         token,
         nim: voter.nim,
-        hasVoted: voter.vote === 1,
+        hasVoted: Boolean(voter.vote),
       },
     };
   }, {
@@ -120,7 +124,7 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
       success: true,
       data: {
         nim: voter.nim,
-        hasVoted: voterData?.vote === 1,
+        hasVoted: Boolean(voterData?.vote),
         votingStatus: status,
       },
     };
@@ -167,6 +171,34 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
     };
   })
   
+  // Protected: Verify device before entering booth
+  .post('/verify-device', async ({ body, jwt, request, set }) => {
+    const voter = await getVoterFromRequest(jwt, request);
+    if (!voter) {
+      set.status = 401;
+      return { success: false, error: 'Unauthorized: Voter authentication required' };
+    }
+    
+    const { fingerprint } = body;
+    
+    // Check if device already voted
+    const existingDevice = await db.select().from(device_votes).where(eq(device_votes.fingerprint, fingerprint)).limit(1);
+    
+    if (existingDevice.length > 0) {
+      set.status = 403;
+      return {
+        success: false,
+        error: 'This device has already been used to cast a vote.',
+      };
+    }
+    
+    return { success: true };
+  }, {
+    body: t.Object({
+      fingerprint: t.String({ minLength: 1, maxLength: 64 })
+    })
+  })
+
   // Protected: Cast vote
   .post('/vote', async ({ body, jwt, request, set }) => {
     const voter = await getVoterFromRequest(jwt, request);
@@ -198,12 +230,20 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
     }
 
     // Extract IP address from request
+    const cfIp = request.headers.get('cf-connecting-ip');
     const forwarded = request.headers.get('x-forwarded-for');
     const realIp = request.headers.get('x-real-ip');
-    const ipAddress = forwarded?.split(',')[0]?.trim() || realIp || 'unknown';
+    const ipAddress = cfIp || forwarded?.split(',')[0]?.trim() || realIp || '127.0.0.1';
     
-    // Cast vote with device fingerprint
-    const result = await castVote(voter.nim, candidateId, fingerprint, deviceInfo, ipAddress);
+    // Cast vote with device fingerprint and extreme telemetry
+    const result = await castVote(
+      voter.nim, 
+      candidateId, 
+      fingerprint, 
+      ipAddress, 
+      (request as any).cf || {}, // Fixed 500 error: Safely fallback if Cloudflare features are missing locally
+      deviceInfo
+    );
     
     if (!result.success) {
       set.status = 400;
@@ -238,13 +278,13 @@ export const voterRoutes = new Elysia({ prefix: '/voter' })
       return { success: false, error: 'Unauthorized: Voter authentication required' };
     }
     
-    // Check if voting has ended
+    // Check if voting has ended OR live score is explicitly enabled
     const status = await getVotingStatus();
-    if (!status.hasEnded) {
+    if (!status.hasEnded && !status.is_live_score_enabled) {
       set.status = 403;
       return {
         success: false,
-        error: 'Results are only available after the voting period has officially ended.',
+        error: 'Results are currently hidden by the administrator.',
       };
     }
     

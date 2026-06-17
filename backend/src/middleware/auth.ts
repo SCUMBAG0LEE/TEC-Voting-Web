@@ -13,7 +13,7 @@ import type { VoterJwtPayload, AdminJwtPayload, JwtPayload } from '../types';
 /**
  * JWT Plugin Configuration
  */
-export const jwtPlugin = new Elysia({ name: 'jwt-plugin' })
+export const jwtPlugin = new Elysia({ aot: false, name: 'jwt-plugin' })
   .use(
     jwt({
       name: 'jwt',
@@ -47,7 +47,7 @@ async function extractUser(jwtInstance: any, request: Request): Promise<JwtPaylo
 /**
  * Voter Guard - creates an Elysia instance with voter authentication
  */
-export const voterGuard = new Elysia({ name: 'voter-guard' })
+export const voterGuard = new Elysia({ aot: false, name: 'voter-guard' })
   .use(jwtPlugin)
   .derive(async ({ jwt, request }) => {
     const user = await extractUser(jwt, request);
@@ -69,7 +69,7 @@ export const voterGuard = new Elysia({ name: 'voter-guard' })
 /**
  * Admin Guard - creates an Elysia instance with admin authentication
  */
-export const adminGuard = new Elysia({ name: 'admin-guard' })
+export const adminGuard = new Elysia({ aot: false, name: 'admin-guard' })
   .use(jwtPlugin)
   .derive(async ({ jwt, request }) => {
     const user = await extractUser(jwt, request);

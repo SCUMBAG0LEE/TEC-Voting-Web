@@ -2,73 +2,85 @@
  * Device Fingerprint Service
  * TEC Voting System - Backend
  * 
- * Tracks device fingerprints to prevent multi-voting from same device.
- * No voter identity (NIM) is stored — preserving ballot anonymity.
+ * Uses Cloudflare edge signals to prevent multi-voting.
  */
 
-import { queryOne, execute } from '../db';
-import type { DeviceInfo, DeviceVote } from '../types';
+import { db } from '../db';
+import { device_votes } from '../db/schema';
+import { eq, sql } from 'drizzle-orm';
 
 /**
  * Check if a device has already voted
  */
 export async function hasDeviceVoted(fingerprint: string): Promise<boolean> {
-  const result = await queryOne<{ count: number }>(
-    'SELECT COUNT(*) as count FROM device_votes WHERE fingerprint = ?',
-    [fingerprint]
-  );
-  return Number(result?.count ?? 0) > 0;
+  const result = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(device_votes)
+    .where(eq(device_votes.fingerprint, fingerprint));
+  return Number(result[0]?.count ?? 0) > 0;
 }
 
 /**
- * Register a device vote after successful voting.
- * Stores the fingerprint + all device signals for admin analysis.
- * No NIM is stored to preserve voter anonymity.
+ * Register a device vote after successful voting using CF Edge signals.
  */
 export async function registerDeviceVote(
   fingerprint: string,
-  deviceInfo: DeviceInfo,
   ipAddress: string,
-  connection?: any
+  cf: any,
+  deviceInfo: any,
+  tx?: any
 ): Promise<void> {
-  const queryStr = `INSERT INTO device_votes 
-     (fingerprint, user_agent, platform, language, languages, 
-      screen_resolution, color_depth, device_pixel_ratio, timezone,
-      hardware_concurrency, device_memory, max_touch_points,
-      webgl_renderer, webgl_vendor, ip_address, device_data)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+  const dbOrTx = tx || db;
   
-  const params = [
-    fingerprint,
-    deviceInfo.userAgent || null,
-    deviceInfo.platform || null,
-    deviceInfo.language || null,
-    deviceInfo.languages ? deviceInfo.languages.join(',') : null,
-    deviceInfo.screenResolution || null,
-    deviceInfo.colorDepth ?? null,
-    deviceInfo.devicePixelRatio ?? null,
-    deviceInfo.timezone || null,
-    deviceInfo.hardwareConcurrency ?? null,
-    deviceInfo.deviceMemory ?? null,
-    deviceInfo.maxTouchPoints ?? null,
-    deviceInfo.webglRenderer || null,
-    deviceInfo.webglVendor || null,
-    ipAddress || null,
-    JSON.stringify(deviceInfo),
-  ];
+  // Enhance frontend device data with Cloudflare's enterprise network telemetry
+  const enhancedDeviceData = {
+    ...deviceInfo,
+    network: {
+      city: cf?.city || 'Unknown',
+      country: cf?.country || 'Unknown',
+      continent: cf?.continent || 'Unknown',
+      isp: cf?.asOrganization || 'Unknown',
+      cfTimezone: cf?.timezone || 'Unknown'
+    }
+  };
 
-  if (connection) {
-    await connection.query(queryStr, params);
-  } else {
-    await execute(queryStr, params);
-  }
+  await dbOrTx.insert(device_votes).values({
+    fingerprint,
+    ip_address: ipAddress || null,
+    asn: cf?.asn || null,
+    bot_score: cf?.botManagement?.score || null,
+    tls_cipher: cf?.tlsCipher || null,
+    user_agent: deviceInfo?.userAgent || null,
+    device_data: enhancedDeviceData,
+  });
 }
 
 /**
  * Clear all device vote records.
- * Called during election reset.
  */
 export async function resetDeviceVotes(): Promise<number> {
-  const result = await execute('DELETE FROM device_votes');
-  return result.affectedRows;
+  const result = await db.delete(device_votes).returning();
+  return result.length;
+}
+
+/**
+ * Generate a highly-secure server-side fingerprint using Cloudflare Edge signals
+ */
+export async function generateCloudflareFingerprint(request: Request, fallbackFingerprint: string): Promise<string> {
+  const cf = (request as any).cf || {};
+  const ip = request.headers.get('cf-connecting-ip') || 'unknown-ip';
+  
+  const signals = [
+    ip,
+    cf.asn || 'unknown-asn',
+    cf.tlsCipher || 'unknown-cipher',
+    cf.botManagement?.score || 'unknown-bot-score',
+    fallbackFingerprint
+  ].join('|');
+  
+  const encoder = new TextEncoder();
+  const data = encoder.encode(signals);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }

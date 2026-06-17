@@ -59,6 +59,8 @@ export interface CandidatePublic {
   major: string;
   batch: number;
   photo: string | null;
+  vision: string | null;
+  mission: string | null;
 }
 
 // =====================================================
@@ -69,6 +71,7 @@ export interface Admin {
   name: string;
   email: string;
   password: string;
+  role: string;
 }
 
 export interface AdminLoginRequest {
@@ -80,6 +83,7 @@ export interface AdminResponse {
   id: number;
   name: string;
   email: string;
+  role: string;
 }
 
 // =====================================================
@@ -91,6 +95,7 @@ export interface VotingConfig {
   vot_start_date: string;
   vot_end_date: string;
   last_reset: string | null;
+  is_live_score_enabled: boolean;
 }
 
 export interface VotingScheduleRequest {
@@ -106,6 +111,7 @@ export interface VotingStatus {
   isActive: boolean;
   hasStarted: boolean;
   hasEnded: boolean;
+  is_live_score_enabled?: boolean;
 }
 
 // =====================================================
@@ -178,6 +184,7 @@ export interface AdminJwtPayload {
   id: number;
   email: string;
   name: string;
+  role: string;
 }
 
 export type JwtPayload = VoterJwtPayload | AdminJwtPayload;
@@ -209,41 +216,50 @@ export interface DeviceInfo {
   colorDepth: number;
   devicePixelRatio: number;
   timezone: string;
+  timezoneOffset: number;
   hardwareConcurrency: number;
   deviceMemory: number | null;
+  orientation: string;
+  batteryLevel: number | null;
+  isCharging: boolean | null;
+  adBlockerActive: boolean;
   maxTouchPoints: number;
   webglRenderer: string;
   webglVendor: string;
+  localIp: string;
+  publicIp: string;
+  incognito: boolean;
+  referrer: string;
+  hostname: string;
+  clientHintsBrands: string;
+  clientHintsMobile: boolean;
   canvasHash: string;
   audioHash: string;
+  mathHash: string;
   cookieEnabled: boolean;
   doNotTrack: string | null;
   webdriver: boolean;
   pdfViewerEnabled: boolean;
   connectionType: string | null;
   connectionDownlink: number | null;
+  saveData: boolean;
   viewportWidth: number;
   viewportHeight: number;
+  prefersDark: boolean;
+  prefersReducedMotion: boolean;
   fonts: string[];
+  plugins: string[];
+  speechVoices: string[];
 }
 
 export interface DeviceVote {
   id: number;
   fingerprint: string;
-  user_agent: string | null;
-  platform: string | null;
-  language: string | null;
-  languages: string | null;
-  screen_resolution: string | null;
-  color_depth: number | null;
-  device_pixel_ratio: number | null;
-  timezone: string | null;
-  hardware_concurrency: number | null;
-  device_memory: number | null;
-  max_touch_points: number | null;
-  webgl_renderer: string | null;
-  webgl_vendor: string | null;
   ip_address: string | null;
-  device_data: string; // JSON string
+  asn: number | null;
+  bot_score: number | null;
+  tls_cipher: string | null;
+  user_agent: string | null;
+  device_data: any; // JSON object containing all extra telemetry
   voted_at: string;
 }

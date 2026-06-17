@@ -1,0 +1,6 @@
+name = "tec-voting-frontend"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-02-22"
+
+[vars]
+VITE_API_URL = "https://your-worker-url.workers.dev"

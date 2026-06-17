@@ -1,317 +1,53 @@
 # TEC Voting System - Frontend
 
-A modern Progressive Web Application (PWA) for electronic voting, built with **Angular 21**. This frontend provides interfaces for both voters and administrators.
+The frontend for the TEC Online Voting System. Built as a blazing-fast, edge-optimized Progressive Web App (PWA) using React, Vite, and Chakra UI.
 
 ## 🚀 Tech Stack
 
-- **Framework**: Angular 21 (Standalone Components)
-- **Styling**: SCSS with CSS Variables
-- **PWA**: Service Worker enabled for offline support
-- **HTTP Client**: Angular HttpClient with JWT interceptor
-- **State Management**: Angular Signals (reactive primitives)
-- **Build Tool**: esbuild (via Angular CLI)
+- **Framework**: [React 18](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Routing**: [TanStack Router](https://tanstack.com/router/latest) (File-based, type-safe routing)
+- **State Management**: [Jotai](https://jotai.org/) (Atomic, ghost-rendered state)
+- **Styling**: [Chakra UI](https://chakra-ui.com/) (Accessible, customizable components)
+- **Animations**: [Anime.js](https://animejs.com/) (Cinematic staggered loading)
+- **API Client**: [Elysia Eden Treaty](https://elysiajs.com/eden/treaty.html) (100% End-to-End Type Safety)
+- **Icons**: [Phosphor Icons](https://phosphoricons.com/) via Iconify
+- **PWA**: `vite-plugin-pwa` (Installable native app experience)
 
-## ✨ Features
+## ✨ Key Features
 
-### Voter Features
-- 🔐 **Simple Login** - Login with NIM (Student ID) only
-- 👀 **View Candidates** - Browse all candidates with photos and details
-- 🗳️ **Cast Vote** - Select and confirm vote with validation
-- ✅ **Vote Status** - Check if already voted
+- **Type-Safe API Calls**: Eden Treaty directly imports the ElysiaJS backend types. If a backend route changes, the frontend TypeScript compiler will immediately flag errors. No more mismatched API routes!
+- **Responsive Design**: Flawless layout adapting from massive desktop monitors down to standard mobile screens.
+- **PWA Capabilities**: Fully installable on iOS and Android devices, complete with a Hatsune Miku Teal (`#39C5BB`) themed mobile status bar and custom splash screens.
+- **Zero-Shift Animations**: Smooth fade and slide animations mapped strictly to CSS transforms to prevent expensive browser layout recalculations.
+- **Smart Polling**: Intelligent, silent 20-second background polling keeps Live Scores perfectly synced without triggering Cloudflare rate limits.
+- **Military-Grade Fingerprinting**: Features a custom-built, asynchronous fingerprinting engine that utilizes Audio wave hashing, WebGL extraction, WebRTC IP leakage, and a 9-service fallback array to map devices perfectly while bypassing uBlock Origin and other strict adblockers.
 
-### Admin Features
-- 📊 **Dashboard** - Overview with statistics, voting status, and live tally
-- 👥 **Voter Management** - Pagination, search, add/bulk add/delete voters
-- 👤 **Candidate Management** - CRUD with photo upload
-- ⚙️ **Voting Configuration** - Set title, start/end dates
-- 📜 **Election History** - View past election results
-- 🔄 **System Reset** - Reset voting with history preservation
+## 🛠️ Local Development
 
-## 📋 Prerequisites
+1. **Install Dependencies:**
+   ```bash
+   bun install
+   ```
 
-- **Node.js**: Not required (using Bun)
-- **Bun**: v1.0+
-- **Backend API**: Running on `http://localhost:3000`
+2. **Configure Environment Variables:**
+   Create a `.env` file at the frontend root:
+   ```env
+   VITE_API_URL=http://localhost:8787
+   ```
 
-## 🛠️ Installation
+3. **Start Development Server:**
+   ```bash
+   bun run dev
+   ```
 
-```bash
-cd frontend
-bun install
-```
+## 📦 Production Deployment (Cloudflare Pages)
 
-## 🚀 Development
-
-```bash
-# Start development server
-bun run start
-
-# Navigate to http://localhost:4200
-# App auto-reloads on file changes
-```
-
-## 📦 Production Build
-
-### Deploy at Root Path
-
-If deploying at the root of your domain (e.g., `https://example.com/`):
+To deploy directly to Cloudflare Pages:
 
 ```bash
-bun run build:prod
-```
-
-### Deploy at Subpath
-
-If deploying to a subpath (e.g., `https://example.com/voting/`):
-
-```bash
-bun run build:subpath
-```
-
-This builds with `baseHref="/voting/"` configured. Update `/voting/` in `angular.json` under `production:subpath` configuration if your path differs.
-
-### Custom Subpath
-
-For a custom subpath:
-
-```bash
-bun run ng build --configuration production --base-href /your-path/
-```
-
-Build artifacts are stored in `dist/frontend/browser/`.
-
-## ⚙️ Configuration
-
-### Changing the API URL
-
-The API URL is configured in environment files:
-
-| Environment | File | Default API URL |
-|-------------|------|-----------------|
-| Development | `src/environments/environment.ts` | `http://localhost:3000/api` |
-| Production | `src/environments/environment.prod.ts` | `/api` (relative) |
-
-#### For Development
-
-Edit `src/environments/environment.ts`:
-
-```typescript
-export const environment = {
-  production: false,
-  apiUrl: 'http://localhost:3000/api',  // Change this
-  staticUrl: 'http://localhost:3000/static',
-  appName: 'TEC Online Voting',
-  recaptchaSiteKey: '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI', // Google test key
-  hcaptchaSiteKey: '10000000-ffff-ffff-ffff-000000000001', // hCaptcha test key
-};
-```
-
-#### For Production
-
-Update `src/environments/environment.prod.ts` with your backend URL:
-
-```typescript
-export const environment = {
-  production: true,
-  apiUrl: 'https://api.example.com/api',  // Your backend API URL
-  staticUrl: 'https://api.example.com/static',
-  appName: 'TEC Online Voting',
-  recaptchaSiteKey: 'your_production_recaptcha_site_key_here',
-  hcaptchaSiteKey: 'your_production_hcaptcha_site_key_here',
-};
-```
-
-### Nginx Deployment
-
-#### Option 1: Deploy at Root Domain
-
-```nginx
-server {
-    listen 80;
-    server_name voting.example.com;
-
-    # Serve Angular app
-    location / {
-        root /var/www/TEC-Voting-Web/dist/frontend/browser;
-        try_files $uri $uri/ /index.html;
-        index index.html;
-    }
-}
-```
-
-Build command: `bun run build:prod`
-
-#### Option 2: Deploy at Subpath
-
-```nginx
-server {
-    listen 80;
-    server_name example.com;
-
-    # Serve Angular app at /voting
-    location /voting {
-        alias /var/www/TEC-Voting-Web/dist/frontend/browser;
-        try_files $uri $uri/ /voting/index.html;
-        index index.html;
-    }
-}
-```
-
-Build command: `bun run build:subpath`
-
-#### Option 3: Frontend and Backend on Same Server
-
-```nginx
-server {
-    listen 80;
-    server_name voting.example.com;
-
-    # Serve Angular app
-    location / {
-        root /var/www/TEC-Voting-Web/dist/frontend/browser;
-        try_files $uri $uri/ /index.html;
-    }
-
-    # Proxy API requests to backend
-    location /api {
-        proxy_pass http://localhost:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-
-    # Proxy static files to backend
-    location /static {
-        proxy_pass http://localhost:3000;
-    }
-}
-```
-
-#### For Different Backend Server
-
-If your backend is on a different server in production, edit `environment.prod.ts`:
-
-```typescript
-export const environment = {
-  production: true,
-  apiUrl: 'https://api.voting.example.com/api',  // Full URL
-  staticUrl: 'https://api.voting.example.com/static',
-  appName: 'TEC Online Voting',
-};
-```
-
-Then rebuild: `bun run build`
-
-### Why Not .env Files?
-
-Angular doesn't natively support `.env` files like Node.js does. The `environment.ts` approach is the standard Angular pattern because:
-
-1. **Build-time optimization** - Unused environment code is tree-shaken
-2. **Type safety** - TypeScript checks environment properties
-3. **No runtime overhead** - Values are inlined during build
-
-If you need runtime configuration (change URL without rebuild), you'd need to:
-1. Fetch config from a JSON file on app init
-2. Or use a custom webpack configuration with environment variable injection
-
-For most use cases, the current approach is simpler and recommended.
-
-## 🏗️ Project Structure
-
-```text
-src/
-├── app/
-│   ├── core/                    # Core module
-│   │   ├── constants/           # App constants
-│   │   ├── guards/              # Route guards (auth, admin, voter)
-│   │   ├── interceptors/        # HTTP interceptors (auth token)
-│   │   ├── models/              # TypeScript interfaces
-│   │   └── services/            # API and Auth services
-│   ├── features/                # Feature modules
-│   │   ├── admin/               # Admin pages
-│   │   │   ├── candidates/      # Candidate management
-│   │   │   ├── components/      # Admin shared components (e.g. sidebar)
-│   │   │   ├── config/          # Voting configuration
-│   │   │   ├── dashboard/       # Admin dashboard
-│   │   │   ├── history/         # Election history
-│   │   │   ├── login/           # Admin login
-│   │   │   └── voters/          # Voter management
-│   │   └── voter/               # Voter pages
-│   │       ├── login/           # Unified Login Interface (handles both Voter & Admin)
-│   │       ├── voted/           # Vote confirmation
-│   │       └── voting/          # Voting interface
-│   └── shared/                  # Shared module
-│       ├── components/          # Reusable UI components (e.g. Toast, Footer)
-│       └── services/            # Shared utilities
-├── environments/                # Environment configs
-└── styles.scss                  # Global styles
-```
-
-## 🔐 Authentication
-
-### Voter Flow
-1. Enter NIM (9-digit student ID)
-2. Backend validates NIM exists
-3. JWT token stored in localStorage
-4. Redirected to voting page
-
-### Admin Flow
-1. Enter email and password
-2. Backend validates credentials (bcrypt)
-3. JWT token stored in localStorage
-4. Redirected to admin dashboard
-
-## 🎨 Theming
-
-CSS custom properties in `styles.scss`:
-
-```scss
-:root {
-  --primary-color: #667eea;
-  --secondary-color: #764ba2;
-  --success-color: #48bb78;
-  --danger-color: #f56565;
-  --warning-color: #ed8936;
-}
-```
-
-## 📱 PWA Support
-
-The app is a Progressive Web App:
-- **Installable** on desktop/mobile
-- **Offline support** via Service Worker (production only)
-- **Custom icons** and theme colors
-
-Test PWA locally:
-```bash
+# Generates optimized static assets into the /dist folder
 bun run build
-bunx http-server dist/frontend/browser -p 8080
+
+# Uploads to Cloudflare Edge
+bun run deploy
 ```
-
-## 🐛 Troubleshooting
-
-| Issue | Solution |
-|-------|----------|
-| CORS errors | Ensure backend has CORS enabled for `http://localhost:4200` |
-| Login fails | Voters: NIM must be 9 digits and exist in DB |
-| API connection failed | Check backend is running: `curl http://localhost:3000/health` |
-| PWA not working | Service worker only works in production build |
-
-## 📝 Available Scripts
-
-| Command | Description |
-|---------|-------------|
-| `bun run start` | Start dev server at port 4200 |
-| `bun run build` | Production build |
-| `bun run watch` | Build in watch mode |
-| `bun run test` | Run unit tests |
-
-## 📄 License
-
-MIT
-
----
-
-**See also**: [Backend README](../backend/README.md) for API documentation.

@@ -14,3 +14,12 @@ bun.lockb
 # Uploaded files (but keep folder structure)
 uploads/**/*
 !uploads/**/.gitkeep
+
+# Cloudflare Wrangler local state
+.wrangler/
+
+# SQLite databases (if used locally)
+*.sqlite
+*.sqlite3
+*.db
+*.db-journal

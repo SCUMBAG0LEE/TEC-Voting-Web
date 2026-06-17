@@ -1,75 +1,93 @@
-# TEC Voting System - Backend API
+# TEC Voting System - Backend
 
-A modern backend API for the Tarumanagara English Club Online Voting System, built with **Bun** and **ElysiaJS**.
+A bleeding-edge Cloudflare Serverless backend API for the Tarumanagara English Club Online Voting System, built with **Cloudflare Workers**, **ElysiaJS**, and **Drizzle ORM**.
 
-## 🚀 Tech Stack
+## 🚀 The Architecture
 
-- **Runtime**: [Bun](https://bun.sh/) v1.0+ - Fast all-in-one JavaScript runtime
-- **Framework**: [ElysiaJS](https://elysiajs.com/) v1.4 - Fast, type-safe web framework
-- **Database**: MariaDB / MySQL via native mariadb connector
-- **Authentication**: JWT with bcrypt password hashing
-- **Security**: Rate limiting on auth endpoints
-- **Documentation**: Swagger/OpenAPI at `/docs`
+- **Edge Runtime**: [Cloudflare Workers](https://workers.cloudflare.com/) - 0ms cold starts, globally distributed
+- **Framework**: [ElysiaJS](https://elysiajs.com/) v1.4 - Fast, type-safe web framework built for the Edge
+- **Database**: [Neon Serverless PostgreSQL](https://neon.tech/) powered by Cloudflare Hyperdrive
+- **ORM**: [Drizzle ORM](https://orm.drizzle.team/) - Type-safe, high-performance database toolkit
+- **Validation**: [Valibot](https://valibot.dev/) - Highly tree-shakable schema validation (tiny edge bundle)
+- **Cryptography**: Native Web Crypto API (`crypto.subtle`) - PBKDF2 for zero-dependency passwords
+- **Fingerprinting**: 3-Layer Device tracking combining Cloudflare `request.cf` parameters, extreme frontend hardware hashing, and DB unique constraints.
 - **Language**: TypeScript with strict mode
 
 ## ✨ Features
 
+- ⚡ **Hyperdrive Edge Caching** - Neon Postgres queries are automatically pooled and cached globally at Cloudflare's edge
 - 🔐 **JWT Authentication** - Separate tokens for voters and admins
-- 🔒 **Bcrypt Passwords** - Secure password hashing with auto-upgrade from plain text
-- 🚦 **Rate Limiting** - Protection against brute force attacks (5 req/min on login)
-- 🗳️ **Secure Voting** - Atomic transactions, double-vote prevention
-- 💻 **Device Fingerprinting** - Prevents multi-voting from the same browser/device
+- 🔒 **PBKDF2 Passwords** - Secure password hashing using native V8 Web Crypto API
+- 🛡️ **Edge Security & Rate Limiting** - Upstash HTTP Redis pipelining for 0ms DDoS and brute-force protection
+- 🤖 **Captcha Fallback System** - Multi-provider Captcha (Google reCAPTCHA, hCaptcha, Cloudflare Turnstile) support
+- 🗳️ **Secure Voting** - Atomic Drizzle transactions with double-vote prevention
+- 💻 **Server-Side Fingerprinting** - Uses `cf-connecting-ip`, ASN, and TLS ciphers acting as the absolute source of truth to detect split-tunnel VPNs.
 - 👥 **Voter Management** - Add, delete, bulk import, pagination, search
 - 👤 **Candidate Management** - CRUD with photo upload support
 - 📊 **Live Vote Tallying** - Real-time results with percentages
 - 📅 **Voting Schedule** - Configurable start/end times with auto-activation
 - 📜 **Election History** - Auto-save results before reset
-- 💾 **Automated Backups** - Generates full JSON database snapshots on reset
-- 🚀 **Redis Caching** - Optional auto-detecting Redis cache for high-performance dashboard and polling
-- 🔄 **System Reset** - Reset votes while preserving history
-- 📖 **API Documentation** - Swagger UI at `/docs`
 
 ## 📋 Prerequisites
 
-- [Bun](https://bun.sh/) >= 1.0
-- MariaDB or MySQL database
-- Database schema (see `database.sql` in the old PHP version)
+- [Node.js](https://nodejs.org/) >= 18 (Required by Cloudflare's Wrangler CLI tool)
+- [Bun](https://bun.sh/) >= 1.0 (for local development and testing)
+- [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/install-and-update/)
+- Cloudflare Account with Hyperdrive enabled
+- Neon.tech Serverless Postgres database
 
-## 🛠️ Installation
+## 🧠 Bun vs Cloudflare Workers (How It Works)
+
+You can absolutely use **Bun** for your local development! However, to understand how this works, we need to clear up a massive misconception about what Cloudflare actually uses in production.
+
+### What Cloudflare uses in Production (Not Node, Not Bun)
+When you deploy your app to Cloudflare, it **does not run on Node.js, and it does not run on Bun**. 
+
+Cloudflare Workers run on a completely custom, open-source engine called **workerd**. This is a highly stripped-down, ultra-fast V8 engine (the exact same JavaScript engine that powers Google Chrome). It is specifically designed to spin up in milliseconds and strictly uses standard Web APIs (like `fetch`, `Request`, and `Response`).
+
+This is precisely why your ElysiaJS backend is so easy to migrate! Elysia is built on those exact same standard Web APIs, meaning it feels completely at home inside Cloudflare's V8 engine.
+
+### Using Bun for Development
+Even though your code runs on `workerd` in production, you still need a tool on your local machine to install packages, compile the code, and push it to Cloudflare. You can use **Bun** for all of this!
+
+Cloudflare's developer CLI is called **Wrangler**. Wrangler officially supports Bun as a package manager.
+
+Here is exactly how your local development commands will look:
+
+- **Install dependencies:** `bun install`
+- **Run local test server:** `bun run dev` *(This triggers Wrangler to spin up a local emulator of the Cloudflare network!)*
+- **Push to production:** `bun run deploy` *(This triggers Wrangler to push your code globally to Cloudflare's edge)*
+
+## 🛠️ Installation & Setup
 
 1. **Install dependencies:**
    ```bash
    bun install
    ```
 
-2. **Configure environment:**
+2. **Configure Cloudflare Hyperdrive:**
+   - Create a Hyperdrive config in your Cloudflare Dashboard pointing to your Neon connection string.
+   - Edit `wrangler.toml` and paste your Hyperdrive ID.
+
+3. **Configure local environment:**
    ```bash
    cp .env.example .env
-   # Edit .env with your database credentials
+   # Edit .env with your local or remote DB connection strings
    ```
 
-3. **Run development server:**
+4. **Initialize Drizzle Schema:**
+   ```bash
+   bun run db:push
+   ```
+
+5. **Run development server:**
    ```bash
    bun run dev
    ```
 
-4. **Create an admin user (manual bootstrap):**
+6. **Deploy to Cloudflare:**
    ```bash
-   cat << 'EOF' > setup-admin.ts
-   const password = prompt('Enter admin password: ');
-   if (!password) process.exit(1);
-   const hash = await Bun.password.hash(password, { algorithm: "bcrypt", cost: 10 });
-   console.log(`\nRun this SQL against your database:`);
-   console.log(`INSERT INTO admin (name, email, password) VALUES ('Admin', 'admin@example.com', '${hash}') ON DUPLICATE KEY UPDATE password = VALUES(password);`);
-   EOF
-   
-   bun run setup-admin.ts
-   rm setup-admin.ts
-   ```
-
-5. **Build for production:**
-   ```bash
-   bun run build
+   bun run deploy
    ```
 
 ## 📁 Project Structure
@@ -78,17 +96,17 @@ A modern backend API for the Tarumanagara English Club Online Voting System, bui
 backend/
 ├── src/
 │   ├── config/         # Environment variables and configuration logic
-│   ├── db/             # MariaDB connection pool and query helpers
-│   ├── middleware/     # ElysiaJS auth guards & rate limiting modules
+│   ├── db/             # Drizzle ORM setup & schema definitions
+│   ├── middleware/     # ElysiaJS auth guards
 │   ├── routes/         # API endpoint definitions (admin, voter, etc.)
 │   ├── services/       # Core business logic (voting, history, cache, etc.)
-│   ├── types/          # Shared TypeScript interfaces
-│   ├── utils/          # Helper functions (e.g., auth helpers)
-│   └── index.ts        # Server entry point & CORS configuration
-├── db_backups/         # Auto-generated JSON database snapshots
-├── uploads/            # Candidate photos and static assets
+│   ├── types/          # Shared TypeScript interfaces & Valibot schemas
+│   ├── utils/          # Helper functions
+│   └── index.ts        # Cloudflare Worker & Bun entry point
+├── drizzle.config.ts   # Drizzle configuration
+├── wrangler.toml       # Cloudflare Workers config & Hyperdrive bindings
 ├── .env.example        # Environment variable template
-└── package.json        # Bun dependencies and scripts
+└── package.json        # Dependencies and scripts
 ```
 
 ## ⚙️ Environment Variables
@@ -97,25 +115,15 @@ Create a `.env` file based on `.env.example`:
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `DB_SOCKET_PATH` | Database Unix Socket | (optional) |
-| `DB_HOST` | Database host | `localhost` |
-| `DB_PORT` | Database port | `3306` |
-| `DB_USER` | Database user | `root` |
-| `DB_PASSWORD` | Database password | (empty) |
-| `DB_NAME` | Database name | `voting` |
+| `DATABASE_URL` | Neon Postgres URL | (required) |
 | `JWT_SECRET` | JWT signing secret | (required) |
 | `JWT_EXPIRES_IN` | JWT expiration | `24h` |
 | `HOST` | Server host/interface | `localhost` |
 | `PORT` | Server port | `3000` |
 | `NODE_ENV` | Environment | `development` |
-| `CORS_ORIGIN` | Allowed CORS origin(s) | `http://localhost:4200` |
-| `REDIS_SOCKET_PATH`| Redis Unix Socket | (optional) |
-| `REDIS_URL` | Redis connection URL | (optional) |
-| `REDIS_HOST` | Redis host | (optional) |
-| `REDIS_PORT` | Redis port | `6379` |
-| `REDIS_PASSWORD`| Redis password | (optional) |
-| `RECAPTCHA_SECRET_KEY` | Google reCAPTCHA v2 Secret Key | (optional test key) |
-| `HCAPTCHA_SECRET_KEY` | hCaptcha Secret Key | (optional test key) |
+| `CORS_ORIGIN` | Allowed CORS origin(s) | `http://localhost:5173` |
+| `UPSTASH_REDIS_REST_URL` | Upstash Redis REST Endpoint | (required for rate limiting) |
+| `UPSTASH_REDIS_REST_TOKEN` | Upstash Redis REST Auth | (required for rate limiting) |
 
 ### CORS Configuration
 
@@ -123,50 +131,23 @@ The `CORS_ORIGIN` variable supports multiple formats:
 
 ```env
 # Single origin
-CORS_ORIGIN=http://localhost:4200
+CORS_ORIGIN=http://localhost:5173
 
 # Multiple origins (comma-separated)
-CORS_ORIGIN=http://localhost:4200,https://voting.example.com,https://admin.example.com
+CORS_ORIGIN=http://localhost:5173,https://voting.example.com,https://admin.example.com
 
 # Allow all origins (not recommended for production)
 CORS_ORIGIN=*
 ```
 
-### Host Configuration
-
-The `HOST` variable controls which network interface the server binds to.
-
-Built on **ElysiaJS**, which properly handles both IPv4 and IPv6 bindings:
-
-```env
-# Local only - only accessible from the same machine (default)
-HOST=localhost
-
-# All interfaces - accessible from other devices on the network
-# This binds to both IPv4 (0.0.0.0) and IPv6 (::)
-HOST=0.0.0.0
-
-# Specific IP - use your machine's IP for network access
-# Useful if you encounter binding issues
-HOST=192.168.1.100
-```
-
-**Recommended for different scenarios:**
-- **Development (local only):** `HOST=localhost`
-- **Development (network testing):** `HOST=0.0.0.0` (works reliably with ElysiaJS)
-- **Server deployments:** Use your actual server IP (e.g., `192.168.1.100`)
-
-Use `0.0.0.0` or your machine's IP when you need to access the API from other devices (e.g., testing on mobile, running frontend on a different machine, or server deployments).
-
 ### Production Configuration
 
-For production, ensure you set:
-```env
-NODE_ENV=production
-JWT_SECRET=your-very-long-secure-random-secret-key-here
-CORS_ORIGIN=https://your-frontend-domain.com
-# Or multiple domains:
-# CORS_ORIGIN=https://voting.example.com,https://admin.example.com
+For Cloudflare Workers production deployment, use `wrangler secret put`:
+```bash
+wrangler secret put JWT_SECRET
+wrangler secret put CORS_ORIGIN
+wrangler secret put UPSTASH_REDIS_REST_URL
+wrangler secret put UPSTASH_REDIS_REST_TOKEN
 ```
 
 ## 📚 API Endpoints
@@ -179,7 +160,7 @@ CORS_ORIGIN=https://your-frontend-domain.com
 | GET | `/health` | Health check |
 | GET | `/docs` | Swagger documentation |
 | GET | `/api/voter/status` | Get voting status |
-| POST | `/api/voter/login` | Voter login (rate limited) |
+| POST | `/api/voter/login` | Voter login |
 | GET | `/api/candidates` | Get all candidates (public info) |
 
 ### Voter Endpoints (JWT Required)
@@ -189,13 +170,14 @@ CORS_ORIGIN=https://your-frontend-domain.com
 | GET | `/api/voter/me` | Get current voter info |
 | GET | `/api/voter/candidates` | Get candidates for voting |
 | POST | `/api/voter/vote` | Cast vote |
+| GET | `/api/voter/results` | Get live/final results (if allowed) |
 | POST | `/api/voter/logout` | Logout |
 
 ### Admin Endpoints (Admin JWT Required)
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/admin/login` | Admin login (rate limited) |
+| POST | `/api/admin/login` | Admin login |
 | GET | `/api/admin/me` | Get admin info |
 | GET | `/api/admin/dashboard` | Dashboard stats |
 | GET | `/api/admin/voters` | Get all voters (paginated) |
@@ -205,8 +187,11 @@ CORS_ORIGIN=https://your-frontend-domain.com
 | GET | `/api/admin/voting/config` | Get voting config |
 | PUT | `/api/admin/voting/schedule` | Update schedule |
 | PUT | `/api/admin/voting/title` | Update title |
+| PUT | `/api/admin/voting/live-score` | Toggle live score visibility |
 | GET | `/api/admin/tally` | Get live tally |
 | POST | `/api/admin/reset` | Reset voting system |
+| POST | `/api/admin/system/backup` | Download JSON system backup |
+| POST | `/api/admin/system/restore` | Restore system from JSON |
 | GET | `/api/admin/history` | Get election history |
 
 ### Candidate Endpoints
@@ -220,166 +205,33 @@ CORS_ORIGIN=https://your-frontend-domain.com
 | PUT | `/api/candidates/:id` | Update (admin) |
 | DELETE | `/api/candidates/:id` | Delete (admin) |
 
-### Upload Endpoints (Admin JWT Required)
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/upload/candidate-photo` | Upload photo |
-| DELETE | `/api/upload/candidate-photo/:filename` | Delete photo |
-
-### Static Files
-
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/static/*` | Serve uploaded files |
-
-## 🏗️ Project Structure
-
-```
-backend/
-├── src/
-│   ├── config/              # Configuration
-│   │   └── index.ts         # Environment config loader
-│   ├── db/                  # Database
-│   │   └── index.ts         # Connection pool & query helpers
-│   ├── middleware/          # Middleware
-│   │   ├── auth.ts          # JWT authentication
-│   │   ├── rate-limit.ts    # Rate limiting
-│   │   └── index.ts
-│   ├── routes/              # API routes
-│   │   ├── voter.routes.ts
-│   │   ├── admin.routes.ts
-│   │   ├── candidate.routes.ts
-│   │   ├── upload.routes.ts
-│   │   └── index.ts
-│   ├── services/            # Business logic
-│   │   ├── voter.service.ts
-│   │   ├── candidate.service.ts
-│   │   ├── admin.service.ts
-│   │   ├── voting.service.ts
-│   │   ├── history.service.ts
-│   │   └── index.ts
-│   ├── types/               # TypeScript types
-│   │   ├── index.ts         # Database models
-│   │   └── schemas.ts       # Request validation schemas
-│   ├── utils/               # Utilities
-│   │   ├── auth-helpers.ts  # Shared auth functions
-│   │   └── index.ts
-│   └── index.ts             # Entry point
-├── uploads/                 # Uploaded files (gitignored)
-│   └── candidate_photos/
-├── dist/                    # Build output (gitignored)
-├── .env                     # Environment variables (gitignored)
-├── .env.example             # Environment template
-├── package.json
-├── tsconfig.json
-└── README.md
-```
-
-## 🔐 Authentication
-
-### JWT Token Usage
-
-Include the token in the `Authorization` header:
-```
-Authorization: Bearer <your-jwt-token>
-```
-
-### Voter Authentication
-1. POST `/api/voter/login` with `{ "nim": "123456789" }`
-2. Receive JWT token
-3. Token includes: `{ nim, hasVoted, type: "voter" }`
-
-### Admin Authentication
-1. POST `/api/admin/login` with `{ "email": "admin@tec.com", "password": "..." }`
-2. Passwords are verified with bcrypt
-3. Token includes: `{ id, name, email, type: "admin" }`
-
-### Password Security
-- Passwords are hashed with bcrypt (cost factor 10)
-- Legacy plain-text passwords are auto-upgraded on successful login
-- Rate limiting prevents brute force attacks
-
-## 🚦 Rate Limiting
-
-Authentication endpoints are rate-limited:
-- **Limit**: 5 requests per minute per IP
-- **Applies to**: `/api/voter/login`, `/api/admin/login`
-- **Response**: 429 Too Many Requests
-
-## 🔧 Development
-
-```bash
-# Run with hot reload
-bun run dev
-
-# Run tests
-bun test
-
-# Type check
-bunx tsc --noEmit
-
-# Build for production
-bun run build
-```
-
 ## 🚀 Production Deployment
 
-1. **Build the application:**
+1. **Verify Types & Build:**
    ```bash
-   bun run build
+   bun run build:local
    ```
 
-2. **Set environment variables:**
+2. **Deploy to Cloudflare:**
    ```bash
-   export NODE_ENV=production
-   export JWT_SECRET=your-secure-secret
-   export CORS_ORIGIN=https://your-frontend.com
-   # Or multiple origins: export CORS_ORIGIN=https://app.example.com,https://admin.example.com
-   ```
-
-3. **Run with process manager (optional):**
-   ```bash
-   # Using PM2
-   pm2 start dist/index.js --interpreter ~/.bun/bin/bun
-   
-   # Or directly
-   bun run dist/index.js
-   ```
-
-4. **Reverse proxy (nginx example):**
-   ```nginx
-   server {
-       listen 80;
-       server_name api.voting.example.com;
-
-       location / {
-           proxy_pass http://localhost:3000;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection 'upgrade';
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-           proxy_cache_bypass $http_upgrade;
-       }
-   }
+   bun run deploy
    ```
 
 ## 🗄️ Database Schema
 
-The API expects the following tables (from the original PHP version):
+The API expects the following Postgres tables:
 
 ```sql
 -- Voters table
 CREATE TABLE voters (
-  no INT AUTO_INCREMENT PRIMARY KEY,
+  no SERIAL PRIMARY KEY,
   nim VARCHAR(9) UNIQUE NOT NULL,
-  vote TINYINT DEFAULT 0
+  vote BOOLEAN DEFAULT FALSE
 );
 
 -- Candidates table
 CREATE TABLE candidates (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   nim VARCHAR(9) NOT NULL,
   major VARCHAR(255) NOT NULL,
@@ -390,7 +242,7 @@ CREATE TABLE candidates (
 
 -- Admin table
 CREATE TABLE admin (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   email VARCHAR(255) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL
@@ -400,14 +252,14 @@ CREATE TABLE admin (
 CREATE TABLE voting (
   id INT PRIMARY KEY DEFAULT 1,
   voting_title VARCHAR(255),
-  vot_start_date DATETIME,
-  vot_end_date DATETIME,
-  last_reset DATETIME
+  vot_start_date TIMESTAMP,
+  vot_end_date TIMESTAMP,
+  last_reset TIMESTAMP
 );
 
 -- Election history
 CREATE TABLE election_history (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   election_title VARCHAR(255),
   winner_name VARCHAR(255),
   winner_nim VARCHAR(9),
@@ -418,15 +270,15 @@ CREATE TABLE election_history (
   total_votes INT,
   total_voters INT,
   voters_participated INT,
-  start_date DATETIME,
-  end_date DATETIME,
+  start_date TIMESTAMP,
+  end_date TIMESTAMP,
   candidates_data JSON,
-  saved_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  saved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Device Fingerprints table (prevents multi-voting)
 CREATE TABLE device_votes (
-  id INT AUTO_INCREMENT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   fingerprint VARCHAR(64) NOT NULL UNIQUE,
   user_agent TEXT,
   platform VARCHAR(64),
@@ -443,9 +295,9 @@ CREATE TABLE device_votes (
   webgl_vendor VARCHAR(255),
   ip_address VARCHAR(45),
   device_data JSON,
-  voted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_fingerprint (fingerprint)
+  voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+CREATE INDEX idx_fingerprint ON device_votes(fingerprint);
 ```
 
 ## 📄 License
@@ -454,4 +306,4 @@ MIT
 
 ---
 
-**See also**: [Frontend README](../frontend/README.md) for the Angular application.
+**See also**: [Frontend README](../frontend/README.md) for the React application.

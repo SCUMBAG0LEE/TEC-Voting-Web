@@ -1,27 +1,32 @@
 {
   "name": "tec-voting-backend",
   "version": "1.0.0",
-  "description": "TEC Online Voting System - Backend API built with Bun + ElysiaJS",
+  "description": "TEC Online Voting System Backend - Edge-native API exclusively built for Cloudflare Workers using ElysiaJS",
   "type": "module",
   "scripts": {
-    "dev": "bun run --watch src/index.ts",
-    "start": "bun run src/index.ts",
-    "build": "bun build src/index.ts --outdir ./dist --target bun",
-    "test": "bun test"
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "test": "bun test",
+    "start:local": "bun run src/index.ts",
+    "build:local": "bun build src/index.ts --outdir ./dist --target bun"
   },
   "dependencies": {
-    "@elysiajs/cors": "^1.4.0",
-    "@elysiajs/jwt": "^1.4.0",
-    "@elysiajs/swagger": "^1.3.1",
-    "bcrypt": "^6.0.0",
-    "elysia": "^1.4.19",
-    "elysia-rate-limit": "^4.4.2",
-    "ioredis": "^5.11.1",
-    "mariadb": "^3.5.3"
+    "@elysiajs/cors": "latest",
+    "@elysiajs/jwt": "latest",
+    "@elysiajs/swagger": "latest",
+    "@upstash/redis": "latest",
+    "drizzle-orm": "latest",
+    "elysia": "latest",
+    "postgres": "latest",
+    "valibot": "latest"
   },
   "devDependencies": {
-    "@types/bcrypt": "^6.0.0",
+    "@cloudflare/workers-types": "latest",
     "@types/bun": "latest",
-    "typescript": "^5.9.3"
+    "drizzle-kit": "latest",
+    "typescript": "latest",
+    "wrangler": "latest"
   }
 }

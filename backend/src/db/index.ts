@@ -2,121 +2,87 @@
  * Database Connection Module
  * TEC Voting System - Backend
  * 
- * Using the native mariadb connector for optimal performance
+ * Using Drizzle ORM on top of postgres.js for maximum Edge & Hyperdrive performance
  */
 
-import mariadb, { type Pool, type UpsertResult } from 'mariadb';
+import { drizzle } from 'drizzle-orm/postgres-js';
+import postgres from 'postgres';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { config } from '../config';
+import * as schema from './schema';
 
-export type { UpsertResult } from 'mariadb';
+let sql: ReturnType<typeof postgres> | null = null;
+let dbInstance: ReturnType<typeof drizzle> | null = null;
 
-// Pool instance (lazy initialization)
-let pool: Pool | null = null;
+export type DB = ReturnType<typeof drizzle<typeof schema>>;
+
+export const dbContext = new AsyncLocalStorage<DB>();
 
 /**
- * Get the database pool (lazy initialization)
+ * Get a fresh Postgres.js and Drizzle instance
+ * CRITICAL: Cloudflare Hyperdrive rotates connection string credentials periodically.
+ * We MUST NOT cache this globally, but instead instantiate it per-request.
  */
-function getPool(): Pool {
-  if (!pool) {
-    const dbConfig: mariadb.PoolConfig = {
-      user: config.db.user,
-      password: config.db.password,
-      database: config.db.database,
-      // Return DATE/DATETIME fields as strings to avoid implicit timezone conversions
-      dateStrings: true,
-      // Return insertId as Number instead of BigInt to avoid JSON serialization issues
-      insertIdAsNumber: true,
-      connectionLimit: 10,
-      connectTimeout: 10000, // 10 seconds timeout
-    };
+export function getDb(connectionString: string): { sql: ReturnType<typeof postgres>; db: DB } {
+  // prepare: false is required for Cloudflare Hyperdrive / PgBouncer
+  // max: 1 because Hyperdrive handles the pooling at the edge, so the worker only needs 1 socket
+  const sqlInstance = postgres(connectionString, { prepare: false, max: 1 });
+  const dbInstance = drizzle(sqlInstance, { schema }) as unknown as DB;
+  return { sql: sqlInstance, db: dbInstance };
+}
 
-    if (config.db.socketPath) {
-      dbConfig.socketPath = config.db.socketPath;
-    } else {
-      dbConfig.host = config.db.host;
-      dbConfig.port = config.db.port;
-    }
-
-    pool = mariadb.createPool(dbConfig);
+export function getDbProxy(): DB {
+  const db = dbContext.getStore();
+  if (db) return db;
+  
+  // Fallback for standalone scripts (like seed.ts)
+  const fallbackUrl = process.env.NEON_DB_URL || process.env.DATABASE_URL || config.db.url;
+  if (fallbackUrl) {
+    return getDb(fallbackUrl).db;
   }
-  return pool;
+  
+  throw new Error("DB context not initialized. Ensure request runs within ALS scope or DATABASE_URL is set.");
 }
 
-/**
- * Execute a query with parameters
- * mariadb returns rows directly (not wrapped in [rows, fields] like mysql2)
- */
-export async function query<T = any>(
-  sql: string,
-  params?: any[]
-): Promise<T[]> {
-  try {
-    const rows = await getPool().query(sql, params);
-    return rows as T[];
-  } catch (error) {
-    console.error('Database query error:', error);
-    throw error;
+// Export a lazy proxy so the DB connection reads from AsyncLocalStorage on each request
+export const db = new Proxy({} as DB, {
+  get(_target, prop) {
+    return (getDbProxy() as any)[prop];
   }
-}
+});
+
+import { sql as drizzleSql } from 'drizzle-orm';
 
 /**
- * Execute a query that returns a single row
+ * Legacy getter for standalone scripts
  */
-export async function queryOne<T = any>(
-  sql: string,
-  params?: any[]
-): Promise<T | null> {
-  const rows = await query<T>(sql, params);
-  return rows[0] || null;
-}
-
-/**
- * Execute an insert/update/delete query
- */
-export async function execute(
-  sql: string,
-  params?: any[]
-): Promise<UpsertResult> {
-  try {
-    const result = await getPool().query(sql, params);
-    return result as UpsertResult;
-  } catch (error) {
-    console.error('Database execute error:', error);
-    throw error;
+export function getSql() {
+  const connectionString = process.env.NEON_DB_URL || process.env.DATABASE_URL || config.db.url;
+  if (!sql) {
+    sql = postgres(connectionString, { prepare: false });
   }
-}
-
-/**
- * Get a connection for transactions
- */
-export async function getConnection() {
-  return getPool().getConnection();
+  return sql;
 }
 
 /**
  * Test database connection
  */
-export async function testConnection(): Promise<boolean> {
+export async function testConnection(connectionString: string): Promise<boolean> {
   try {
-    const p = getPool();
-    const connection = await p.getConnection();
-    await connection.ping();
-    connection.release();
+    const { db: testDb, sql: testSql } = getDb(connectionString);
+    await testDb.execute(drizzleSql`SELECT 1`);
+    await testSql.end(); // Clean up connection
     console.log('✅ Database connection successful');
     return true;
   } catch (error: any) {
     console.error('❌ Database connection failed:', error.message || error);
-    // Don't throw - return false to indicate failure
     return false;
   }
 }
 
 /**
- * Check if database is connected (non-blocking check)
+ * Check if database is configured
  */
 export function isDatabaseConfigured(): boolean {
-  return !!(config.db.host && config.db.user && config.db.database);
+  return !!(config.db.host && config.db.user && config.db.database) || !!config.db.url;
 }
-
-export { getPool as pool };
-export default getPool;

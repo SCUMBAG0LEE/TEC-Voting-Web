@@ -6,11 +6,13 @@
  * The fallback values are for development convenience only.
  */
 
+import process from 'node:process';
+
 const isDev = process.env.NODE_ENV !== 'production';
 
 // Warn about missing security-critical env vars in production
 if (!isDev) {
-  const requiredVars = ['DB_PASSWORD', 'JWT_SECRET'];
+  const requiredVars = ['DB_PASSWORD', 'JWT_SECRET', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'];
   const missing = requiredVars.filter(v => !process.env[v]);
   if (missing.length > 0) {
     console.warn(`⚠️  WARNING: Missing critical environment variables in production: ${missing.join(', ')}`);
@@ -19,46 +21,56 @@ if (!isDev) {
 
 export const config = {
   // Database
-  db: {
-    socketPath: (process.env.DB_SOCKET_PATH || '').replace(/^['"]|['"]$/g, '').trim(),
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '3306'),
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'voting',
+  get db() {
+    return {
+      url: process.env.DATABASE_URL || '',
+      host: process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || '5432'),
+      user: process.env.DB_USER || 'postgres',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'voting',
+    };
   },
   
   // JWT
-  jwt: {
-    secret: process.env.JWT_SECRET || (isDev ? 'dev-only-secret-change-in-production' : ''),
-    expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+  get jwt() {
+    return {
+      secret: process.env.JWT_SECRET || (isDev ? 'dev-only-secret-change-in-production' : ''),
+      expiresIn: process.env.JWT_EXPIRES_IN || '24h',
+    };
   },
   
   // Server
-  server: {
-    host: process.env.HOST || 'localhost', // Use '0.0.0.0' to listen on all interfaces
-    port: parseInt(process.env.PORT || '3000'),
-    env: process.env.NODE_ENV || 'development',
+  get server() {
+    return {
+      host: process.env.HOST || 'localhost', // Use '0.0.0.0' to listen on all interfaces
+      port: parseInt(process.env.PORT || '3000'),
+      env: process.env.NODE_ENV || 'development',
+    };
   },
   
   // CORS - supports multiple origins (comma-separated)
-  cors: {
-    origin: parseCorsOrigins(process.env.CORS_ORIGIN || 'http://localhost:4200'),
+  get cors() {
+    return {
+      origin: parseCorsOrigins(process.env.CORS_ORIGIN || 'http://localhost:5173'),
+    };
   },
   
-  // Redis (Optional)
-  redis: {
-    socketPath: (process.env.REDIS_SOCKET_PATH || '').replace(/^['"]|['"]$/g, '').trim(),
-    url: process.env.REDIS_URL || '',
-    host: process.env.REDIS_HOST || '',
-    port: parseInt(process.env.REDIS_PORT || '6379'),
-    password: process.env.REDIS_PASSWORD || '',
+  // Upstash Redis (For Rate Limiting)
+  get upstash() {
+    return {
+      url: process.env.UPSTASH_REDIS_REST_URL || '',
+      token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
+    };
   },
   
   // Captcha
-  captcha: {
-    recaptchaSecret: process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe', // Test Key
-    hcaptchaSecret: process.env.HCAPTCHA_SECRET_KEY || '0x0000000000000000000000000000000000000000', // Test Key
+  get captcha() {
+    return {
+      recaptchaSecret: process.env.RECAPTCHA_SECRET_KEY || '6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe', // Test Key
+      hcaptchaSecret: process.env.HCAPTCHA_SECRET_KEY || '0x0000000000000000000000000000000000000000', // Test Key
+      turnstileSecret: process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA', // Test Key
+    };
   }
 };
 

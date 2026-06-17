@@ -2,10 +2,12 @@
  * Voting Service
  * TEC Voting System - Backend
  * 
- * Handles voting configuration and status
+ * Handles voting configuration and status using Drizzle ORM
  */
 
-import { query, queryOne, execute } from '../db';
+import { db } from '../db';
+import { voting } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import type { VotingConfig, VotingStatus } from '../types';
 import { getOrSetCache, invalidateCache } from './cache.service';
 
@@ -14,31 +16,17 @@ const CACHE_KEYS = {
   STATUS: 'voting:status'
 };
 
-// Convert ISO/Date string to MariaDB DATETIME format (UTC)
-function toMariaDbDateTime(dateString: string): string {
-  // Preserve local wall-clock values for strings like 2026-05-06T23:00[:00]
-  // so DATETIME storage does not shift by timezone.
-  const localMatch = dateString.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})(?::(\d{2}))?$/);
-  if (localMatch) {
-    const [, datePart, timePart, seconds] = localMatch;
-    return `${datePart} ${timePart}:${seconds || '00'}`;
-  }
-
-  const d = new Date(dateString);
-  if (isNaN(d.getTime())) {
-    throw new Error('Invalid date');
-  }
-  return d.toISOString().slice(0, 19).replace('T', ' ');
-}
-
 /**
  * Get current voting configuration
  */
-export async function getVotingConfig(): Promise<VotingConfig | null> {
+export async function getVotingConfig(): Promise<any | null> {
   return getOrSetCache(
     CACHE_KEYS.CONFIG,
     60, // Cache for 60 seconds
-    async () => queryOne<VotingConfig>('SELECT * FROM voting LIMIT 1')
+    async () => {
+      const result = await db.select().from(voting).where(eq(voting.id, 1));
+      return result[0] || null;
+    }
   );
 }
 
@@ -52,7 +40,7 @@ export async function getVotingStatus(): Promise<VotingStatus> {
     async () => {
       const config = await getVotingConfig();
       
-      if (!config) {
+      if (!config || !config.vot_start_date || !config.vot_end_date) {
         return {
           title: 'No Election Configured',
           startDate: '',
@@ -60,6 +48,7 @@ export async function getVotingStatus(): Promise<VotingStatus> {
           isActive: false,
           hasStarted: false,
           hasEnded: false,
+          is_live_score_enabled: false,
         };
       }
       
@@ -78,6 +67,7 @@ export async function getVotingStatus(): Promise<VotingStatus> {
         isActive,
         hasStarted,
         hasEnded,
+        is_live_score_enabled: !!config.is_live_score_enabled,
       };
     }
   );
@@ -98,71 +88,64 @@ export async function updateVotingSchedule(
   startDate: string,
   endDate: string
 ): Promise<boolean> {
-  const start = toMariaDbDateTime(startDate);
-  const end = toMariaDbDateTime(endDate);
+  const start = new Date(startDate);
+  const end = new Date(endDate);
 
-  // Try update existing config (id=1)
-  const result = await execute(
-    'UPDATE voting SET vot_start_date = ?, vot_end_date = ? WHERE id = 1',
-    [start, end]
-  );
+  const result = await db.insert(voting)
+    .values({ id: 1, voting_title: 'Election', vot_start_date: start, vot_end_date: end })
+    .onConflictDoUpdate({
+      target: voting.id,
+      set: { vot_start_date: start, vot_end_date: end }
+    }).returning();
 
-  // If no row updated, insert a new config row
-  if (result.affectedRows === 0) {
-    const insert = await execute(
-      'INSERT INTO voting (id, voting_title, vot_start_date, vot_end_date) VALUES (1, ?, ?, ?) ON DUPLICATE KEY UPDATE vot_start_date = VALUES(vot_start_date), vot_end_date = VALUES(vot_end_date)',
-      ['Election', start, end]
-    );
-    if (insert.affectedRows > 0) {
-      await invalidateCache(CACHE_KEYS.CONFIG);
-      await invalidateCache(CACHE_KEYS.STATUS);
-      return true;
-    }
-    return false;
+  if (result.length > 0) {
+    await invalidateCache(CACHE_KEYS.CONFIG);
+    await invalidateCache(CACHE_KEYS.STATUS);
+    return true;
   }
+  return false;
+}
 
-  await invalidateCache(CACHE_KEYS.CONFIG);
-  await invalidateCache(CACHE_KEYS.STATUS);
-  return true;
+/**
+ * Update live score visibility
+ */
+export async function updateLiveScoreVisibility(enabled: boolean): Promise<boolean> {
+  const result = await db.update(voting).set({ is_live_score_enabled: enabled }).where(eq(voting.id, 1)).returning();
+  
+  if (result.length > 0) {
+    await invalidateCache(CACHE_KEYS.CONFIG);
+    await invalidateCache(CACHE_KEYS.STATUS);
+    return true;
+  }
+  return false;
 }
 
 /**
  * Update voting title
  */
 export async function updateVotingTitle(title: string): Promise<boolean> {
-  // Try update existing config (id=1)
-  const result = await execute(
-    'UPDATE voting SET voting_title = ? WHERE id = 1',
-    [title]
-  );
+  const result = await db.insert(voting)
+    .values({ id: 1, voting_title: title, vot_start_date: new Date(), vot_end_date: new Date() })
+    .onConflictDoUpdate({
+      target: voting.id,
+      set: { voting_title: title }
+    }).returning();
 
-  // If no row updated, insert a new config row
-  if (result.affectedRows === 0) {
-    const insert = await execute(
-      'INSERT INTO voting (id, voting_title, vot_start_date, vot_end_date) VALUES (1, ?, NOW(), NOW()) ON DUPLICATE KEY UPDATE voting_title = VALUES(voting_title)',
-      [title]
-    );
-    if (insert.affectedRows > 0) {
-      await invalidateCache(CACHE_KEYS.CONFIG);
-      await invalidateCache(CACHE_KEYS.STATUS);
-      return true;
-    }
-    return false;
+  if (result.length > 0) {
+    await invalidateCache(CACHE_KEYS.CONFIG);
+    await invalidateCache(CACHE_KEYS.STATUS);
+    return true;
   }
-
-  await invalidateCache(CACHE_KEYS.CONFIG);
-  await invalidateCache(CACHE_KEYS.STATUS);
-  return true;
+  return false;
 }
 
 /**
  * Update last reset timestamp
  */
 export async function updateLastReset(): Promise<boolean> {
-  const result = await execute(
-    'UPDATE voting SET last_reset = NOW() WHERE id = 1'
-  );
-  if (result.affectedRows > 0) {
+  const result = await db.update(voting).set({ last_reset: new Date() }).where(eq(voting.id, 1)).returning();
+  
+  if (result.length > 0) {
     await invalidateCache(CACHE_KEYS.CONFIG);
     await invalidateCache(CACHE_KEYS.STATUS);
     return true;

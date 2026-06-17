@@ -8,19 +8,8 @@
 import { Elysia, t } from 'elysia';
 import { jwtPlugin } from '../middleware/auth';
 import { getAdminFromRequest, requireAdmin } from '../utils';
-import { mkdir, writeFile, unlink } from 'fs/promises';
-import { join } from 'path';
-import { existsSync } from 'fs';
-
-// Upload directory
-const UPLOAD_DIR = join(process.cwd(), 'uploads', 'candidate_photos');
-
-// Ensure upload directory exists
-async function ensureUploadDir() {
-  if (!existsSync(UPLOAD_DIR)) {
-    await mkdir(UPLOAD_DIR, { recursive: true });
-  }
-}
+import { uploadToR2, deleteFromR2, type Env } from '../services/storage.service';
+import { cloudflareEnvContext } from '../utils/context';
 
 // Generate unique filename
 function generateFilename(originalName: string, nim: string): string {
@@ -29,7 +18,7 @@ function generateFilename(originalName: string, nim: string): string {
   return `${nim}_${timestamp}.${ext}`;
 }
 
-export const uploadRoutes = new Elysia({ prefix: '/upload' })
+export const uploadRoutes = new Elysia({ aot: false, prefix: '/upload' })
   .use(jwtPlugin)
   
   // Upload candidate photo
@@ -39,7 +28,6 @@ export const uploadRoutes = new Elysia({ prefix: '/upload' })
     if (authError) return authError;
     
     try {
-      await ensureUploadDir();
       
       const file = body.file;
       const nim = body.nim;
@@ -64,15 +52,19 @@ export const uploadRoutes = new Elysia({ prefix: '/upload' })
         };
       }
       
-      // Generate filename and save
+      // Generate filename
       const filename = generateFilename(file.name, nim);
-      const filepath = join(UPLOAD_DIR, filename);
-      
-      const buffer = await file.arrayBuffer();
-      await writeFile(filepath, Buffer.from(buffer));
-      
-      // Return relative path for storage in database
       const relativePath = `candidate_photos/${filename}`;
+      const buffer = await file.arrayBuffer();
+
+      // Cloudflare Edge Native implementation (No local FS)
+      const workerEnv = cloudflareEnvContext.getStore() as Env;
+      if (!workerEnv || !workerEnv.STORAGE_BUCKET) {
+        throw new Error('R2 STORAGE_BUCKET is not configured or bound');
+      }
+      
+      const uploaded = await uploadToR2(workerEnv, relativePath, buffer, file.type);
+      if (!uploaded) throw new Error('R2 upload failed');
       
       return {
         success: true,
@@ -114,17 +106,19 @@ export const uploadRoutes = new Elysia({ prefix: '/upload' })
         };
       }
       
-      const filepath = join(UPLOAD_DIR, params.filename);
-      
-      if (!existsSync(filepath)) {
-        set.status = 404;
-        return {
-          success: false,
-          error: 'File not found',
-        };
+      const workerEnv = cloudflareEnvContext.getStore() as Env;
+      if (!workerEnv || !workerEnv.STORAGE_BUCKET) {
+        throw new Error('R2 STORAGE_BUCKET is not configured or bound');
       }
       
-      await unlink(filepath);
+      const deleted = await deleteFromR2(workerEnv, `candidate_photos/${params.filename}`);
+      if (!deleted) {
+        set.status = 500;
+        return {
+          success: false,
+          error: 'Failed to delete file from storage',
+        };
+      }
       
       return {
         success: true,

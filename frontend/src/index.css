@@ -1,0 +1,5 @@
+/* index.css - cleared as Chakra UI handles reset */
+body {
+  background-color: var(--chakra-colors-gray-900); /* Fallback */
+  color: white;
+}
