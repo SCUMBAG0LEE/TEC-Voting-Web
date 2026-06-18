@@ -386,13 +386,13 @@ export default function LoginPage() {
 
               <Box position="absolute" left={0} top="50px" w="100%" px="20px" textAlign="center" color="#fff" zIndex={2}
                    transform={isAdminMode ? 'translateX(520px)' : 'translateX(0)'} style={{ transition: 'transform 1.2s ease-in-out' }}>
-                <Heading fontSize="26px" fontWeight="normal" mb="10px">Admin Area</Heading>
-                <Text fontSize="14px" lineHeight="1.5" color="gray.300">Switch to administrator login</Text>
+                <Heading fontSize="26px" fontWeight="normal" mb="10px" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.85), 1px 1px 0 rgba(0,0,0,0.9)' }}>Admin Area</Heading>
+                <Text fontSize="14px" lineHeight="1.5" color="#e2e8f0" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.9)' }}>Switch to administrator login</Text>
               </Box>
               <Box position="absolute" left={0} top="50px" w="100%" px="20px" textAlign="center" color="#fff" zIndex={2}
                    transform={isAdminMode ? 'translateX(0)' : 'translateX(-520px)'} style={{ transition: 'transform 1.2s ease-in-out' }}>
-                <Heading fontSize="26px" fontWeight="normal" mb="10px">Voter Area</Heading>
-                <Text fontSize="14px" lineHeight="1.5" color="gray.300">Switch to voter login</Text>
+                <Heading fontSize="26px" fontWeight="normal" mb="10px" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.85), 1px 1px 0 rgba(0,0,0,0.9)' }}>Voter Area</Heading>
+                <Text fontSize="14px" lineHeight="1.5" color="#e2e8f0" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.9)' }}>Switch to voter login</Text>
               </Box>
 
               <Box position="relative" w="100px" h="36px" mx="auto" bg="transparent" color="#fff" textTransform="uppercase" fontSize="15px" cursor="pointer" zIndex={2} overflow="hidden" onClick={() => setIsAdminMode(!isAdminMode)}
