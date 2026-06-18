@@ -13,7 +13,6 @@ bun.lockb
 
 # Ignore environments
 .env
-.env.*
 
 # OS generated files
 .DS_Store
