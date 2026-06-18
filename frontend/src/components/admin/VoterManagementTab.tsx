@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Box, 
   VStack, 
@@ -18,6 +18,12 @@ import {
 import { Icon } from '@iconify/react';
 import { api } from '../../api';
 
+interface Voter {
+  no: number;
+  nim: string;
+  vote: boolean;
+}
+
 export function VoterManagementTab({ token }: { token: string | null }) {
   const [votersText, setVotersText] = useState('');
   const [isManualLoading, setIsManualLoading] = useState(false);
@@ -25,7 +31,7 @@ export function VoterManagementTab({ token }: { token: string | null }) {
   const [csvFile, setCsvFile] = useState<File | null>(null);
 
   // Voter list state
-  const [voters, setVoters] = useState<any[]>([]);
+  const [voters, setVoters] = useState<Voter[]>([]);
   const [totalVoters, setTotalVoters] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -35,7 +41,7 @@ export function VoterManagementTab({ token }: { token: string | null }) {
   const [isLoadingList, setIsLoadingList] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
 
-  const fetchVoters = async () => {
+  const fetchVoters = useCallback(async () => {
     setIsLoadingList(true);
     try {
       const queryObj: Record<string, string> = { 
@@ -59,7 +65,7 @@ export function VoterManagementTab({ token }: { token: string | null }) {
       console.error(e);
     }
     setIsLoadingList(false);
-  };
+  }, [page, debouncedSearch, sortBy, sortOrder, token]);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 500);
@@ -67,8 +73,9 @@ export function VoterManagementTab({ token }: { token: string | null }) {
   }, [search]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchVoters();
-  }, [page, debouncedSearch, sortBy, sortOrder]);
+  }, [fetchVoters]);
 
   const handleSort = (column: string) => {
     if (sortBy === column) {
@@ -97,7 +104,7 @@ export function VoterManagementTab({ token }: { token: string | null }) {
       } else {
         alert('Error: ' + res.error?.value);
       }
-    } catch (e) {
+    } catch {
       alert('Network error');
     }
     setIsManualLoading(false);
@@ -132,7 +139,7 @@ export function VoterManagementTab({ token }: { token: string | null }) {
         } else {
           alert('Error: ' + res.error?.value);
         }
-      } catch (err) {
+      } catch {
         alert('Network error during CSV upload');
       }
       setIsCsvLoading(false);
@@ -151,7 +158,7 @@ export function VoterManagementTab({ token }: { token: string | null }) {
       } else {
         alert('Error deleting voter');
       }
-    } catch (e) {
+    } catch {
       alert('Network error');
     }
   };
@@ -172,7 +179,7 @@ export function VoterManagementTab({ token }: { token: string | null }) {
       } else {
         alert('Failed: ' + res.error?.value);
       }
-    } catch (err) {
+    } catch {
       alert('Network error');
     }
   };
@@ -180,7 +187,7 @@ export function VoterManagementTab({ token }: { token: string | null }) {
   const animRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (animRef.current) {
-      import('animejs').then((animeModule: any) => {
+      import('animejs').then((animeModule) => {
         if (!animRef.current) return;
         const { animate, stagger } = animeModule;
         if (typeof animate === 'function') {

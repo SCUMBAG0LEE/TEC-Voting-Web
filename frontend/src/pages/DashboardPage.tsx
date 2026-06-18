@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { Box, SimpleGrid, Heading, Text, VStack, HStack, Image, Button, Spinner, Badge, Progress, Card, Separator } from '@chakra-ui/react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Box, SimpleGrid, Heading, Text, VStack, HStack, Image, Button, Spinner, Badge, Progress, Card } from '@chakra-ui/react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { animate, stagger } from 'animejs';
 import { useNavigate } from '@tanstack/react-router';
@@ -9,24 +9,48 @@ import { api } from '../api';
 import { generateDeviceFingerprint, getFullDeviceData } from '../utils/fingerprint';
 import Footer from '../components/Footer';
 
+interface DashboardCandidate {
+  id: number;
+  name: string;
+  photo: string | null;
+  major: string;
+  batch: number;
+  vision: string;
+  mission: string;
+}
+
+interface VoterVotingStatus {
+  isActive: boolean;
+  hasEnded: boolean;
+  is_live_score_enabled: boolean;
+  title: string;
+  startDate: string;
+  endDate: string;
+}
+
+interface ResultCandidate {
+  id: number;
+  name: string;
+  votes: number;
+}
+
 export default function DashboardPage() {
   const token = useAtomValue(tokenAtom);
   const setToken = useSetAtom(setTokenAtom);
   const navigate = useNavigate();
   const [view, setView] = useState<'home' | 'vote' | 'success'>('home');
-  const [candidates, setCandidates] = useState<any[]>([]);
-  const [votingStatus, setVotingStatus] = useState<any>(null);
+  const [candidates, setCandidates] = useState<DashboardCandidate[]>([]);
+  const [votingStatus, setVotingStatus] = useState<VoterVotingStatus | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [voterNim, setVoterNim] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState<number | null>(null);
-  const [voteSuccess, setVoteSuccess] = useState(false);
   const [votedCandidate, setVotedCandidate] = useState('');
-  const [results, setResults] = useState<any[] | null>(null);
+  const [results, setResults] = useState<ResultCandidate[] | null>(null);
   const [totalVotes, setTotalVotes] = useState(0);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const fetchHomeData = async () => {
+  const fetchHomeData = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
     try {
@@ -52,11 +76,12 @@ export default function DashboardPage() {
       console.error("Dashboard fetch error:", e);
     }
     setIsLoading(false);
-  };
+  }, [token, navigate, setToken]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchHomeData();
-  }, [token, navigate, setToken]);
+  }, [fetchHomeData]);
 
   useEffect(() => {
     if (view === 'vote' && candidates.length > 0 && gridRef.current) {
@@ -82,7 +107,7 @@ export default function DashboardPage() {
             setResults(resultsRes.data.data.candidates);
             setTotalVotes(resultsRes.data.data.totalVotes);
           }
-        } catch (e) {
+        } catch {
           // Silently fail on background poll
         }
       }, 20000); // 20 seconds prevents draining Cloudflare Free Tier limits
@@ -114,7 +139,7 @@ export default function DashboardPage() {
       } else {
         alert(candRes.error?.value?.error || candRes.error?.value?.message || 'Could not load candidates.');
       }
-    } catch (e) {
+    } catch {
       alert('Network error while entering voting booth.');
     }
     setIsLoading(false);
@@ -397,7 +422,7 @@ export default function DashboardPage() {
               <Card.Body>
                 <Heading size="md" color="white" mb={6} textAlign="center">{votingStatus?.hasEnded ? '🏆 Final Election Results' : '📊 Live Election Tally'}</Heading>
                 <VStack align="stretch" gap={4}>
-                  {results.map((candidate: any, index: number) => {
+                  {results?.map((candidate, index) => {
                     const percentage = totalVotes > 0 ? ((candidate.votes / totalVotes) * 100).toFixed(1) : 0;
                     const isWinner = index === 0;
                     return (

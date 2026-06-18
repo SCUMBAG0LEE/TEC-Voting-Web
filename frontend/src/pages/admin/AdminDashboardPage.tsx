@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react';
-import { Box, SimpleGrid, Heading, Text, VStack, Button, HStack, Badge, Card, Progress, Tabs, Input, Textarea, Image } from '@chakra-ui/react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Box, SimpleGrid, Heading, Text, VStack, Button, HStack, Badge, Card, Progress, Tabs, Input, Image } from '@chakra-ui/react';
 import { useAtomValue, useSetAtom } from 'jotai';
 import { animate, stagger } from 'animejs';
 import { adminTokenAtom, setAdminTokenAtom } from '../../store';
@@ -11,16 +11,47 @@ import { CandidateManagementTab } from '../../components/admin/CandidateManageme
 import { VoterManagementTab } from '../../components/admin/VoterManagementTab';
 import { ElectionHistoryTab } from '../../components/admin/ElectionHistoryTab';
 
+interface VotingConfig {
+  voting_title: string;
+  vot_start_date: string;
+  vot_end_date: string;
+  is_live_score_enabled: boolean;
+}
+
+interface AdminVotingStatus {
+  isActive: boolean;
+  config: VotingConfig;
+}
+
+interface TallyCandidate {
+  id: number;
+  no: number;
+  name: string;
+  photo: string | null;
+  votes: number;
+}
+
+interface DashboardStats {
+  totalVoters: number;
+  votedCount: number;
+}
+
+interface AdminDashboardData {
+  stats: DashboardStats;
+  votingStatus: AdminVotingStatus;
+  tally: TallyCandidate[];
+}
+
 export default function AdminDashboardPage() {
   const token = useAtomValue(adminTokenAtom);
   const setToken = useSetAtom(setAdminTokenAtom);
   const navigate = useNavigate();
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState<boolean>(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  const fetchDashboard = async () => {
+  const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
       const [dashRes, meRes] = await Promise.all([
@@ -39,11 +70,12 @@ export default function AdminDashboardPage() {
       console.error(e);
     }
     setLoading(false);
-  };
+  }, [token, setToken]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDashboard();
-  }, [setToken]);
+  }, [fetchDashboard]);
 
   // Silent polling for Live Admin Tally
   useEffect(() => {
@@ -53,9 +85,9 @@ export default function AdminDashboardPage() {
         const dashRes = await api.admin.dashboard.get({ $headers: { Authorization: `Bearer ${token}` } });
         if (dashRes.data?.success) {
           // We spread the previous state so we don't accidentally close an open modal if they are interacting
-          setData((prev: any) => ({ ...prev, ...dashRes.data.data }));
+          setData((prev) => prev ? { ...prev, ...dashRes.data.data } : dashRes.data.data);
         }
-      } catch (e) {
+      } catch {
         // Silent fail
       }
     }, 20000); // 20 seconds prevents draining Cloudflare Free Tier limits
@@ -79,7 +111,7 @@ export default function AdminDashboardPage() {
   }
 
   const { stats, votingStatus, tally } = data || {};
-  const totalVotes = tally?.reduce((sum: number, c: any) => sum + c.votes, 0) || 0;
+  const totalVotes = tally?.reduce((sum: number, c: TallyCandidate) => sum + c.votes, 0) || 0;
 
   return (
     <Box minH="100vh" bg="gray.900" color="white" display="flex" flexDir="column">
@@ -158,7 +190,7 @@ export default function AdminDashboardPage() {
           <Heading size="md" mb={4} color="white">Live Vote Tally</Heading>
           
           <SimpleGrid ref={gridRef} columns={{ base: 1, md: 2, lg: tally?.length > 2 ? 3 : 2 }} gap={6}>
-            {tally?.map((candidate: any) => {
+            {tally?.map((candidate) => {
               const percentage = totalVotes === 0 ? 0 : ((candidate.votes / totalVotes) * 100).toFixed(1);
               return (
                 <Card.Root key={candidate.id} bg="gray.800" borderColor="gray.700" overflow="hidden" opacity={0}>
@@ -233,7 +265,7 @@ export default function AdminDashboardPage() {
 
 // VoterManagementTab moved to its own component file
 
-function SettingsTab({ token, votingConfig, onUpdate }: { token: string | null, votingConfig: any, onUpdate: () => void }) {
+function SettingsTab({ token, votingConfig, onUpdate }: { token: string | null, votingConfig: VotingConfig | undefined, onUpdate: () => void }) {
   const [title, setTitle] = useState(votingConfig?.voting_title || '');
   const [startDate, setStartDate] = useState(votingConfig?.vot_start_date ? new Date(votingConfig.vot_start_date).toISOString().slice(0, 16) : '');
   const [endDate, setEndDate] = useState(votingConfig?.vot_end_date ? new Date(votingConfig.vot_end_date).toISOString().slice(0, 16) : '');
@@ -299,8 +331,8 @@ function SettingsTab({ token, votingConfig, onUpdate }: { token: string | null, 
       alert('Election settings have been saved successfully.');
       onUpdate();
 
-    } catch (e: any) {
-      alert(`Update Failed: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`Update Failed: ${e instanceof Error ? e.message : String(e)}`);
     }
     setLoading(false);
   };
@@ -373,8 +405,8 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
         } else {
           throw new Error(res.error?.value?.message || 'Restore failed.');
         }
-      } catch (err: any) {
-        alert(`Restore Error: ${err.message || 'Failed to parse JSON file or network error.'}`);
+      } catch (err: unknown) {
+        alert(`Restore Error: ${err instanceof Error ? err.message : 'Failed to parse JSON file or network error.'}`);
       }
       setRestoreLoading(false);
     };
@@ -414,8 +446,8 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
       }
-    } catch (e: any) {
-      alert(`Backup failed: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`Backup failed: ${e instanceof Error ? e.message : String(e)}`);
     }
     setBackupLoading(false);
   };
@@ -431,8 +463,8 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
       } else {
         throw new Error(res.error?.value?.message || 'Failed to reset voters.');
       }
-    } catch (e: any) {
-      alert(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`Error: ${e instanceof Error ? e.message : String(e)}`);
     }
     setResetVotersLoading(false);
   };
@@ -448,8 +480,8 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
       } else {
         throw new Error(res.error?.value?.message || 'Failed to reset tally.');
       }
-    } catch (e: any) {
-      alert(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`Error: ${e instanceof Error ? e.message : String(e)}`);
     }
     setResetTallyLoading(false);
   };
@@ -470,8 +502,8 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
       } else {
         throw new Error(res.error?.value?.message || 'Archive & Reset failed.');
       }
-    } catch (e: any) {
-      alert(`Error: ${e.message}`);
+    } catch (e: unknown) {
+      alert(`Error: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
       setFactoryResetLoading(false);
     }

@@ -2,7 +2,7 @@ import { atom } from 'jotai';
 
 // State definitions
 export const tokenAtom = atom<string | null>(localStorage.getItem('token') || null);
-export const userAtom = atom<any | null>(null);
+export const userAtom = atom<{ nim: string; type: string } | null>(null);
 
 // Derived state
 export const isAuthenticatedAtom = atom((get) => get(tokenAtom) !== null);
@@ -23,7 +23,7 @@ export const setTokenAtom = atom(
 
 // Admin State definitions
 export const adminTokenAtom = atom<string | null>(localStorage.getItem('admin_token') || null);
-export const adminUserAtom = atom<any | null>(null);
+export const adminUserAtom = atom<Record<string, unknown> | null>(null);
 
 // Admin Derived state
 export const isAdminAuthenticatedAtom = atom((get) => get(adminTokenAtom) !== null);

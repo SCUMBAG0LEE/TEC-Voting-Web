@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useReducer } from 'react';
+import { useEffect, useState, useRef, useReducer, useCallback } from 'react';
 import {
   Box, SimpleGrid, Heading, Text, VStack, Button, HStack, Card, Input, Textarea, Image
 } from '@chakra-ui/react';
@@ -18,6 +18,11 @@ interface Candidate {
 
 type FormState = Omit<Candidate, 'id' | 'votes'>;
 
+type FormAction =
+  | { type: 'SET_FIELD'; payload: { field: string; value: string | number | null } }
+  | { type: 'SET_FROM_CANDIDATE'; payload: Partial<Candidate> }
+  | { type: 'RESET'; payload: null };
+
 const initialFormState: FormState = {
   name: '',
   nim: '',
@@ -28,7 +33,7 @@ const initialFormState: FormState = {
   photo: null,
 };
 
-function formReducer(state: FormState, action: { type: string; payload: any }): FormState {
+function formReducer(state: FormState, action: FormAction): FormState {
   switch (action.type) {
     case 'SET_FIELD':
       return { ...state, [action.payload.field]: action.payload.value };
@@ -57,21 +62,22 @@ export function CandidateManagementTab({ token }: { token: string | null }) {
   const [photo, setPhoto] = useState<File | null>(null);
   const [formState, dispatch] = useReducer(formReducer, initialFormState);
 
-  const fetchCandidates = async () => {
+  const fetchCandidates = useCallback(async () => {
     const { data } = await api.candidates.admin.all.get({
       $headers: { Authorization: `Bearer ${token}` }
     });
     if (data?.success) setCandidates(data.data);
-  };
+  }, [token]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchCandidates();
-  }, []);
+  }, [fetchCandidates]);
 
   const animRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (candidates.length > 0 && animRef.current) {
-      import('animejs').then((animeModule: any) => {
+      import('animejs').then((animeModule) => {
         if (!animRef.current) return;
         const { animate, stagger } = animeModule;
         if (typeof animate === 'function') {
@@ -186,8 +192,8 @@ export function CandidateManagementTab({ token }: { token: string | null }) {
         alert("Candidate Deleted");
         fetchCandidates();
       }
-    } catch(err: any) {
-      alert("Deletion failed: " + err.message);
+    } catch(err: unknown) {
+      alert("Deletion failed: " + (err instanceof Error ? err.message : String(err)));
     }
   };
 

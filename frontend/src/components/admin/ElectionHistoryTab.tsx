@@ -1,11 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Box, 
   VStack, 
   HStack, 
   Heading, 
   Text, 
-  Button, 
   Card, 
   Badge,
   IconButton,
@@ -16,12 +15,27 @@ import {
 import { Icon } from '@iconify/react';
 import { api } from '../../api';
 
+interface HistoryRecord {
+  id: number;
+  election_title: string;
+  start_date: string;
+  end_date: string;
+  winner_name: string;
+  winner_photo: string | null;
+  winner_nim: string;
+  winner_major: string;
+  winner_batch: number;
+  winner_votes: number;
+  total_voters: number;
+  voters_participated: number;
+}
+
 export function ElectionHistoryTab({ token }: { token: string | null }) {
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const animRef = useRef<HTMLDivElement>(null);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await api.admin.history.get({
@@ -34,15 +48,16 @@ export function ElectionHistoryTab({ token }: { token: string | null }) {
       console.error('Failed to fetch history', e);
     }
     setIsLoading(false);
-  };
-
-  useEffect(() => {
-    fetchHistory();
   }, [token]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchHistory();
+  }, [fetchHistory]);
+
+  useEffect(() => {
     if (!isLoading && animRef.current) {
-      import('animejs').then((animeModule: any) => {
+      import('animejs').then((animeModule) => {
         if (!animRef.current) return;
         const { animate, stagger } = animeModule;
         if (typeof animate === 'function') {
@@ -69,7 +84,7 @@ export function ElectionHistoryTab({ token }: { token: string | null }) {
       } else {
         alert('Failed to delete history');
       }
-    } catch (e) {
+    } catch {
       alert('Network error');
     }
   };

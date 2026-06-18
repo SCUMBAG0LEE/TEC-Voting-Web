@@ -27,7 +27,7 @@ async function getPublicIP(): Promise<string> {
       const res = await fetch(url, { signal: controller.signal });
       clearTimeout(id);
       if (res.ok) return (await res.text()).trim();
-    } catch (e) {
+    } catch {
       // Blocked by adblocker, instantly try the next service in the array
     }
   }
@@ -39,7 +39,7 @@ async function getPublicIP(): Promise<string> {
  */
 async function getLocalIP(): Promise<string> {
   return new Promise((resolve) => {
-    const RTCPeerConnection = window.RTCPeerConnection || (window as any).webkitRTCPeerConnection || (window as any).mozRTCPeerConnection;
+    const RTCPeerConnection = window.RTCPeerConnection || (window as unknown as Record<string, typeof window.RTCPeerConnection>).webkitRTCPeerConnection || (window as unknown as Record<string, typeof window.RTCPeerConnection>).mozRTCPeerConnection;
     if (!RTCPeerConnection) return resolve('unsupported');
     const rtc = new RTCPeerConnection({ iceServers: [] });
     rtc.createDataChannel('');
@@ -68,7 +68,9 @@ async function detectIncognito(): Promise<boolean> {
       // Incognito mode heavily restricts storage quotas (often < 120MB)
       if (estimate.quota && estimate.quota < 120000000) return true;
     }
-  } catch (e) {}
+  } catch {
+    // Incognito detection failed, assume not incognito
+  }
   return false;
 }
 
@@ -106,7 +108,7 @@ function getCanvasFingerprint(): string {
     ctx.fillText(txt, 4, 17);
 
     return canvas.toDataURL();
-  } catch (e) {
+  } catch {
     return 'canvas-error';
   }
 }
@@ -119,12 +121,13 @@ function getWebGLData() {
     const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
     if (!gl) return { vendor, renderer };
 
-    const debugInfo = (gl as any).getExtension('WEBGL_debug_renderer_info');
+    const glContext = gl as WebGLRenderingContext;
+    const debugInfo = glContext.getExtension('WEBGL_debug_renderer_info');
     if (debugInfo) {
-      vendor = (gl as any).getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) ?? 'unknown';
-      renderer = (gl as any).getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) ?? 'unknown';
+      vendor = glContext.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) ?? 'unknown';
+      renderer = glContext.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) ?? 'unknown';
     }
-  } catch (e) {
+  } catch {
     // Ignore errors, return defaults
   }
   return { vendor, renderer };
@@ -147,10 +150,10 @@ function getMathFingerprint(): string {
  */
 async function getAudioFingerprint(): Promise<string> {
   try {
-    const AudioContext = window.OfflineAudioContext || (window as any).webkitOfflineAudioContext;
-    if (!AudioContext) return 'no-audio-api';
+    const AudioCtx = window.OfflineAudioContext || (window as unknown as Record<string, typeof window.OfflineAudioContext>).webkitOfflineAudioContext;
+    if (!AudioCtx) return 'no-audio-api';
     
-    const context = new AudioContext(1, 44100, 44100);
+    const context = new AudioCtx(1, 44100, 44100);
     const oscillator = context.createOscillator();
     oscillator.type = 'triangle';
     oscillator.frequency.setValueAtTime(10000, context.currentTime);
@@ -170,7 +173,7 @@ async function getAudioFingerprint(): Promise<string> {
         hash += Math.abs(buffer.getChannelData(0)[i]);
     }
     return hash.toString();
-  } catch (e) {
+  } catch {
     return 'audio-error';
   }
 }
@@ -195,13 +198,13 @@ async function detectAdBlocker(): Promise<boolean> {
       const id = setTimeout(() => controller.abort(), 1500);
       try {
         await fetch(url, { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
-      } catch (e: any) {
-        if (e.name !== 'AbortError') throw e; // True block (net::ERR_BLOCKED_BY_CLIENT)
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name !== 'AbortError') throw err; // True block (net::ERR_BLOCKED_BY_CLIENT)
       } finally {
         clearTimeout(id);
       }
     }));
-  } catch (e) {
+  } catch {
     return true;
   }
 
@@ -219,7 +222,6 @@ async function detectAdBlocker(): Promise<boolean> {
   if (scriptBlocked) return true;
 
   // Test 3: DOM Injection (Fallback for cosmetic-only blockers)
-  let isBlocked = false;
   try {
     const testAd = document.createElement('div');
     testAd.innerHTML = '&nbsp;';
@@ -228,12 +230,12 @@ async function detectAdBlocker(): Promise<boolean> {
     testAd.style.top = '-9999px';
     document.body.appendChild(testAd);
     await new Promise(resolve => setTimeout(resolve, 100)); // Give MutationObserver more time to react
-    isBlocked = testAd.offsetHeight === 0 || testAd.offsetWidth === 0 || window.getComputedStyle(testAd).display === 'none' || testAd.offsetParent === null;
+    const adCheckResult = testAd.offsetHeight === 0 || testAd.offsetWidth === 0 || window.getComputedStyle(testAd).display === 'none' || testAd.offsetParent === null;
     testAd.remove();
-  } catch (e) {
-    isBlocked = false;
+    return adCheckResult;
+  } catch {
+    return false;
   }
-  return isBlocked;
 }
 
 /**
@@ -242,13 +244,15 @@ async function detectAdBlocker(): Promise<boolean> {
 async function getBatteryInfo() {
   try {
     if ('getBattery' in navigator) {
-      const battery: any = await (navigator as any).getBattery();
+      const battery = await (navigator as Navigator & { getBattery: () => Promise<{ level?: number; charging?: boolean }> }).getBattery();
       return { 
         level: battery.level !== undefined ? battery.level : null, 
         charging: battery.charging !== undefined ? battery.charging : null 
       };
     }
-  } catch (e) {}
+  } catch {
+    // Battery API not available
+  }
   return { level: null, charging: null };
 }
 
@@ -307,14 +311,14 @@ function getFonts(): string[] {
 async function getSpeechVoices(): Promise<string[]> {
   return new Promise((resolve) => {
     if (!('speechSynthesis' in window)) return resolve([]);
-    let voices = window.speechSynthesis.getVoices();
+    const voices = window.speechSynthesis.getVoices();
     if (voices.length > 0) return resolve(voices.map(v => v.name));
     window.speechSynthesis.onvoiceschanged = () => resolve(window.speechSynthesis.getVoices().map(v => v.name));
     setTimeout(() => resolve([]), 100);
   });
 }
 
-let cachedDeviceData: any = null;
+let cachedDeviceData: Record<string, unknown> | null = null;
 
 /**
  * Gathers various device and browser properties.
@@ -366,13 +370,19 @@ async function getDeviceData() {
   const publicIp = await getPublicIP();
   const fonts = getFonts();
   
-  const uaData = (navigator as any).userAgentData;
-  const clientHintsBrands = uaData?.brands?.map((b: any) => `${b.brand} ${b.version}`).join(', ') || 'unknown';
+  const nav = navigator as Navigator & {
+    userAgentData?: { brands?: Array<{ brand: string; version: string }>; mobile?: boolean; platform?: string };
+    deviceMemory?: number;
+    pdfViewerEnabled?: boolean;
+    connection?: { effectiveType?: string; downlink?: number; saveData?: boolean };
+  };
+  const uaData = nav.userAgentData;
+  const clientHintsBrands = uaData?.brands?.map((b) => `${b.brand} ${b.version}`).join(', ') || 'unknown';
   const clientHintsMobile = uaData?.mobile || false;
   
   const data = {
     userAgent: navigator.userAgent || 'unknown',
-    platform: navigator.platform || (navigator as any).userAgentData?.platform || 'unknown',
+    platform: navigator.platform || nav.userAgentData?.platform || 'unknown',
     language: navigator.language || 'en',
     languages: Array.from(navigator.languages || ['en']),
     screenResolution: `${window.screen.width || 0}x${window.screen.height || 0}`,
@@ -381,7 +391,7 @@ async function getDeviceData() {
     timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
     timezoneOffset: new Date().getTimezoneOffset() ?? 0,
     hardwareConcurrency: navigator.hardwareConcurrency || 2,
-    deviceMemory: (navigator as any).deviceMemory ?? null,
+    deviceMemory: nav.deviceMemory ?? null,
     orientation: (window.screen.orientation || {}).type || 'unknown',
     batteryLevel: battery.level ?? null,
     isCharging: battery.charging ?? null,
@@ -402,10 +412,10 @@ async function getDeviceData() {
     cookieEnabled: navigator.cookieEnabled ?? false,
     doNotTrack: navigator.doNotTrack ?? null,
     webdriver: navigator.webdriver ?? false,
-    pdfViewerEnabled: (navigator as any).pdfViewerEnabled ?? false,
-    connectionType: (navigator as any).connection?.effectiveType ?? null,
-    connectionDownlink: (navigator as any).connection?.downlink ?? null,
-    saveData: (navigator as any).connection?.saveData ?? false,
+    pdfViewerEnabled: nav.pdfViewerEnabled ?? false,
+    connectionType: nav.connection?.effectiveType ?? null,
+    connectionDownlink: nav.connection?.downlink ?? null,
+    saveData: nav.connection?.saveData ?? false,
     viewportWidth: window.innerWidth || 0,
     viewportHeight: window.innerHeight || 0,
     prefersDark: (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) || false,

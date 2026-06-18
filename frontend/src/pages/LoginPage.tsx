@@ -1,5 +1,5 @@
 import { useState, FormEvent, useEffect } from 'react';
-import { Box, Flex, Heading, Text, Input, Button, Link } from '@chakra-ui/react';
+import { Box, Flex, Heading, Text, Input, Button } from '@chakra-ui/react';
 import { useSetAtom } from 'jotai';
 import { useNavigate } from '@tanstack/react-router';
 import { setTokenAtom, userAtom, setAdminTokenAtom, adminUserAtom } from '../store';
@@ -74,9 +74,14 @@ export default function LoginPage() {
 
   const getCaptchaToken = (provider: CaptchaProvider) => {
     try {
-      if (provider === 'recaptcha' && (window as any).grecaptcha) return (window as any).grecaptcha.getResponse();
-      if (provider === 'hcaptcha' && (window as any).hcaptcha) return (window as any).hcaptcha.getResponse();
-      if (provider === 'turnstile' && (window as any).turnstile) return (window as any).turnstile.getResponse();
+      const win = window as Window & {
+        grecaptcha?: { getResponse: () => string };
+        hcaptcha?: { getResponse: () => string };
+        turnstile?: { getResponse: () => string };
+      };
+      if (provider === 'recaptcha' && win.grecaptcha) return win.grecaptcha.getResponse();
+      if (provider === 'hcaptcha' && win.hcaptcha) return win.hcaptcha.getResponse();
+      if (provider === 'turnstile' && win.turnstile) return win.turnstile.getResponse();
     } catch (e) {
       console.error('Failed to get captcha token', e);
     }
@@ -466,7 +471,7 @@ export default function LoginPage() {
           >
             <Button 
               type="button" 
-              onClick={(e) => isAdminMode ? handleAdminLogin(e as any) : handleVoterLogin(e as any)}
+              onClick={() => isAdminMode ? handleAdminLogin() : handleVoterLogin()}
               disabled={isAdminMode ? loadingAdmin : loadingVoter}
               w="260px" h="44px" borderRadius="30px" cursor="pointer"
               position="relative" overflow="hidden"

@@ -1,6 +1,6 @@
 import { Box, Text, Link } from '@chakra-ui/react';
 
-export default function Footer({ position = "static" }: { position?: any }) {
+export default function Footer({ position = "static" }: { position?: "static" | "relative" | "absolute" | "fixed" | "sticky" }) {
   return (
     <Box position={position} bottom={0} left={0} w="full" p={6} textAlign="center" color="whiteAlpha.800" fontSize="sm" zIndex={10}>
       <Text>
