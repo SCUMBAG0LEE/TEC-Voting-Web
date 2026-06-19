@@ -19,7 +19,7 @@ A modern, ultra-fast, highly-scalable, edge-native electronic voting system for 
 - 📅 **Scheduled Voting** - Configurable start/end times with auto-activation.
 - 📜 **Election History** - Automatic archival of past elections.
 - 📱 **PWA Support** - Installable directly on mobile/desktop with offline asset caching.
-- 🎨 **Modern UI** - Clean, responsive design with Chakra UI dark mode and Anime.js cinematic micro-animations.
+- 🎨 **Modern UI** - Clean, responsive design with Chakra UI dark mode, Anime.js micro-animations, and a highly optimized custom dynamic glowing Aura background.
 
 ## 🏗️ Architecture
 

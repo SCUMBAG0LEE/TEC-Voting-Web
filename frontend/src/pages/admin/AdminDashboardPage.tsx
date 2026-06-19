@@ -109,61 +109,61 @@ export default function AdminDashboardPage() {
   }, [loading, data]);
 
   if (loading && !data) {
-    return <Box h="100vh" display="flex" alignItems="center" justifyContent="center" bg="gray.900" color="white">Loading admin portal...</Box>;
+    return <Box h="100vh" display="flex" alignItems="center" justifyContent="center" bg="transparent" color="white">Loading admin portal...</Box>;
   }
 
   const { stats, votingStatus, tally } = data || {};
   const totalVotes = tally?.reduce((sum: number, c: TallyCandidate) => sum + c.votes, 0) || 0;
 
   return (
-    <Box minH="100vh" bg="gray.900" color="white" display="flex" flexDir="column">
+    <Box minH="100vh" bg="transparent" color="white" display="flex" flexDir="column">
       <Box flex="1" p={{ base: 4, md: 8 }}>
-      <HStack justify="space-between" mb={8} borderBottom="1px" borderColor="teal.800" pb={4} flexDir={{ base: 'column', sm: 'row' }} align={{ base: 'start', sm: 'center' }} gap={4}>
+      <HStack justify="space-between" mb={8} borderBottom="1px" borderColor="#39C5BB" pb={4} flexDir={{ base: 'column', sm: 'row' }} align={{ base: 'start', sm: 'center' }} gap={4}>
         <VStack align="start" gap={0}>
           <HStack>
-            <Icon icon="ph:shield-star-bold" fontSize="24px" color="#4FD1C5" />
-            <Heading size="lg" color="teal.300">TEC Admin Portal</Heading>
+            <Icon icon="ph:shield-star-bold" fontSize="24px" color="#39C5BB" />
+            <Heading size="lg" color="#39C5BB">TEC Admin Portal</Heading>
           </HStack>
           <Text color="teal.100">Live Election Dashboard</Text>
         </VStack>
-        <Button colorPalette="red" variant="outline" onClick={() => { setToken(null); navigate({ to: '/login' }); }} color="red.400" borderColor="red.800" _hover={{ bg: 'red.900' }} w={{ base: 'full', sm: 'auto' }}>
+        <Button colorPalette="red" variant="outline" onClick={() => { setToken(null); navigate({ to: '/login' }); }} color="red.500" borderColor="red.500" _hover={{ bg: 'rgba(229, 62, 62, 0.15)', transform: 'scale(1.05)' }} transition="all 0.2s ease" w={{ base: 'full', sm: 'auto' }}>
           <Icon icon="ph:sign-out-bold" />
           Logout
         </Button>
       </HStack>
 
       <Tabs.Root defaultValue="dashboard" variant="enclosed">
-        <Tabs.List mb={6} bg="gray.800" borderRadius="md" p={2} flexWrap="wrap" gap={2} w="full" justifyContent={{ base: 'center', md: 'flex-start' }} borderBottom="none">
-          <Tabs.Trigger value="dashboard" color="gray.300" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
+        <Tabs.List mb={6} bg="rgba(18, 18, 18, 0.85)" border="1px solid rgba(255,255,255,0.2)" borderRadius="md" p={2} flexWrap="wrap" gap={2} w="full" justifyContent={{ base: 'center', md: 'flex-start' }} borderBottom="none" boxShadow="0 4px 15px rgba(0,0,0,0.5)">
+          <Tabs.Trigger value="dashboard" color="white" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
             <HStack gap={2}><Icon icon="ph:chart-line-up-bold" /> Live Dashboard</HStack>
           </Tabs.Trigger>
-          <Tabs.Trigger value="candidates" color="gray.300" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
+          <Tabs.Trigger value="candidates" color="white" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
             <HStack gap={2}><Icon icon="ph:users-three-bold" /> Candidates</HStack>
           </Tabs.Trigger>
-          <Tabs.Trigger value="voters" color="gray.300" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
+          <Tabs.Trigger value="voters" color="white" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
             <HStack gap={2}><Icon icon="ph:address-book-bold" /> Voter Management</HStack>
           </Tabs.Trigger>
-          <Tabs.Trigger value="history" color="gray.300" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
+          <Tabs.Trigger value="history" color="white" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
             <HStack gap={2}><Icon icon="ph:clock-counter-clockwise-bold" /> History</HStack>
           </Tabs.Trigger>
-          <Tabs.Trigger value="settings" color="gray.300" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
+          <Tabs.Trigger value="settings" color="white" _selected={{ bg: '#39C5BB', color: 'gray.900', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
             <HStack gap={2}><Icon icon="ph:gear-six-bold" /> Settings</HStack>
           </Tabs.Trigger>
-          <Tabs.Trigger value="danger" color="red.300" _selected={{ bg: '#F32C9E', color: 'white', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
+          <Tabs.Trigger value="danger" color="red.300" _selected={{ bg: 'red.600', color: 'white', fontWeight: 'bold' }} flex={{ base: '1 1 45%', md: '0 1 auto' }} justifyContent="center">
             <HStack gap={2}><Icon icon="ph:warning-circle-bold" /> Danger Zone</HStack>
           </Tabs.Trigger>
         </Tabs.List>
 
         <Tabs.Content value="dashboard">
           <SimpleGrid columns={{ base: 1, md: 3 }} gap={6} mb={8}>
-            <Card.Root bg="gray.800" borderColor="gray.700">
+            <Card.Root bg="rgba(18, 18, 18, 0.6)" backdropFilter="blur(20px)" borderColor="#39C5BB">
               <Card.Body>
                 <VStack align="start">
-                  <Text color="teal.100" fontSize="sm">Total Voters</Text>
+                  <Text color="#39C5BB" fontSize="sm" fontWeight="bold">Total Voters</Text>
                   <Heading size="2xl" color="white">{stats?.totalVoters || 0}</Heading>
                   <Progress.Root value={((stats?.votersVoted || 0) / (stats?.totalVoters || 1)) * 100} w="full" size="sm" colorPalette="teal">
-                    <Progress.Track bg="gray.700">
-                      <Progress.Range bg="teal.400" />
+                    <Progress.Track bg="rgba(0,0,0,0.5)">
+                      <Progress.Range bg="#39C5BB" />
                     </Progress.Track>
                   </Progress.Root>
                   <Text fontSize="xs" color="teal.200">{stats?.votersVoted} have voted</Text>
@@ -171,11 +171,11 @@ export default function AdminDashboardPage() {
               </Card.Body>
             </Card.Root>
 
-            <Card.Root bg="gray.800" borderColor="gray.700">
+            <Card.Root bg="rgba(18, 18, 18, 0.6)" backdropFilter="blur(20px)" borderColor="#39C5BB">
               <Card.Body>
                 <VStack align="start">
-                  <Text color="teal.100" fontSize="sm">Election Status</Text>
-                  <Badge colorPalette={votingStatus?.isActive ? 'cyan' : 'red'} size="lg" variant="solid">
+                  <Text color="#39C5BB" fontSize="sm" fontWeight="bold">Election Status</Text>
+                  <Badge colorPalette={votingStatus?.isActive ? 'teal' : 'red'} size="lg" variant="solid" bg={votingStatus?.isActive ? '#39C5BB' : 'red.500'} color={votingStatus?.isActive ? 'gray.900' : 'white'}>
                     {votingStatus?.isActive ? 'ACTIVE' : 'INACTIVE'}
                   </Badge>
                   <Text fontSize="xs" color="teal.200" mt={2}>
@@ -195,7 +195,7 @@ export default function AdminDashboardPage() {
             {tally?.map((candidate) => {
               const percentage = totalVotes === 0 ? 0 : ((candidate.votes / totalVotes) * 100).toFixed(1);
               return (
-                <Card.Root key={candidate.id} bg="gray.800" borderColor="gray.700" overflow="hidden" opacity={0}>
+                <Card.Root key={candidate.id} bg="rgba(18, 18, 18, 0.6)" backdropFilter="blur(20px)" borderColor="#F32C9E" overflow="hidden" opacity={0}>
                   <Card.Body>
                     <VStack align="stretch" gap={4}>
                       <HStack justify="space-between">
@@ -207,22 +207,22 @@ export default function AdminDashboardPage() {
                           />
                           <VStack align="start" gap={0}>
                             <Heading size="md" color="white">Candidate {candidate.no}</Heading>
-                            <Text color="cyan.200" fontSize="sm">{candidate.name}</Text>
+                            <Text color="#39C5BB" fontSize="sm">{candidate.name}</Text>
                           </VStack>
                         </HStack>
-                        <Badge colorPalette="cyan" variant="solid" fontSize="xl" px={3} py={1} borderRadius="lg">
+                        <Badge bg="#F32C9E" color="white" variant="solid" fontSize="xl" px={3} py={1} borderRadius="lg">
                           {percentage}%
                         </Badge>
                       </HStack>
                       
                       <Box>
                         <HStack justify="space-between" mb={1}>
-                          <Text fontSize="sm" color="teal.100">Votes</Text>
+                          <Text fontSize="sm" color="#F32C9E">Votes</Text>
                           <Text fontWeight="bold" color="white">{candidate.votes}</Text>
                         </HStack>
-                        <Progress.Root value={Number(percentage)} w="full" size="md" colorPalette="cyan">
-                          <Progress.Track bg="gray.700">
-                            <Progress.Range bg="cyan.400" />
+                        <Progress.Root value={Number(percentage)} w="full" size="md" colorPalette="pink">
+                          <Progress.Track bg="rgba(0,0,0,0.5)">
+                            <Progress.Range bg="#F32C9E" />
                           </Progress.Track>
                         </Progress.Root>
                       </Box>

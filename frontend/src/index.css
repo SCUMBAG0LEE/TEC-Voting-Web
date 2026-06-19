@@ -1,5 +1,29 @@
-/* index.css - cleared as Chakra UI handles reset */
-body {
-  background-color: var(--chakra-colors-gray-900); /* Fallback */
-  color: white;
+html, body, #root, .chakra-theme, [data-theme], .dark, .light {
+  background: transparent !important;
+  color: white !important;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+/* Global Miku Aura Background */
+.miku-aura-bg {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  background-color: #0A0A0A;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    filter: blur(80px) brightness(1);
+  }
+  50% {
+    opacity: 0.8;
+    filter: blur(60px) brightness(1.5);
+  }
 }

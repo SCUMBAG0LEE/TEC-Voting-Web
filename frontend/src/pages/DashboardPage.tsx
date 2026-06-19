@@ -202,16 +202,17 @@ export default function DashboardPage() {
 
   if (view === 'success') {
     return (
-      <Box minH="100vh" bg="gray.900" color="white" display="flex" flexDir="column">
+      <Box minH="100vh" bg="transparent" color="white" display="flex" flexDir="column">
         <Box flex="1" display="flex" alignItems="center" justifyContent="center" p={4}>
         <VStack 
           gap={6} 
-          bg="gray.800" 
+          bg="rgba(18, 18, 18, 0.6)" 
+          backdropFilter="blur(20px)"
           p={12} 
           borderRadius="2xl" 
           boxShadow="0 20px 40px rgba(0,0,0,0.5)"
           border="1px solid"
-          borderColor="teal.800"
+          borderColor="#39C5BB"
           textAlign="center"
           maxW="md"
         >
@@ -246,15 +247,15 @@ export default function DashboardPage() {
 
   if (view === 'vote') {
     return (
-      <Box minH="100vh" bg="gray.900" color="white" display="flex" flexDir="column">
+      <Box minH="100vh" bg="transparent" color="white" display="flex" flexDir="column">
         <Box flex="1" p={{ base: 4, md: 8 }}>
         <VStack gap={8} maxW="6xl" mx="auto">
-          <Box w="full" bg="gray.800" p={6} borderRadius="xl" border="1px solid" borderColor="teal.800" boxShadow="lg">
+          <Box w="full" bg="rgba(18, 18, 18, 0.6)" backdropFilter="blur(20px)" p={6} borderRadius="xl" border="1px solid" borderColor="#F32C9E" boxShadow="lg">
             <HStack w="full" justify="space-between" flexDir={{ base: 'column', md: 'row' }} align={{ base: 'start', md: 'center' }}>
               <VStack align="start" gap={1}>
                 <HStack>
-                  <Icon icon="ph:voting-booth-bold" fontSize="36px" color="#22D3EE" />
-                  <Heading size="xl" color="cyan.400">{votingStatus?.title || 'Voting Booth'}</Heading>
+                  <Icon icon="ph:voting-booth-bold" fontSize="36px" color="#39C5BB" />
+                  <Heading size="xl" color="#F32C9E">{votingStatus?.title || 'Voting Booth'}</Heading>
                 </HStack>
                 <Text color="gray.400" ml={1}>Secure Voting Session</Text>
               </VStack>
@@ -270,7 +271,8 @@ export default function DashboardPage() {
             {candidates.map(candidate => (
               <Box 
                 key={candidate.id}
-                bg="gray.800"
+                bg="rgba(18, 18, 18, 0.6)"
+                backdropFilter="blur(15px)"
                 p={6}
                 borderRadius="2xl"
                 boxShadow="xl"
@@ -302,13 +304,13 @@ export default function DashboardPage() {
                 </VStack>
                 
                 <Box flex="1">
-                  <Box mb={4} textAlign="left" bg="gray.900" p={4} borderRadius="md" w="full" borderLeft="3px solid" borderColor="teal.400">
+                  <Box mb={4} textAlign="left" bg="rgba(0,0,0,0.4)" p={4} borderRadius="md" w="full" borderLeft="3px solid" borderColor="#F32C9E">
                     <Text fontSize="xs" fontWeight="bold" color="teal.300" textTransform="uppercase" mb={2}>Vision</Text>
                     <Text fontSize="sm" color="gray.300" whiteSpace="pre-wrap">{candidate.vision || 'No vision provided.'}</Text>
                   </Box>
                   
-                  <Box textAlign="left" bg="gray.900" p={4} borderRadius="md" w="full" borderLeft="3px solid" borderColor="cyan.400">
-                    <Text fontSize="xs" fontWeight="bold" color="cyan.300" textTransform="uppercase" mb={2}>Mission</Text>
+                  <Box textAlign="left" bg="rgba(0,0,0,0.4)" p={4} borderRadius="md" w="full" borderLeft="3px solid" borderColor="#39C5BB">
+                    <Text fontSize="xs" fontWeight="bold" color="#39C5BB" textTransform="uppercase" mb={2}>Mission</Text>
                     <Text fontSize="sm" color="gray.300" whiteSpace="pre-wrap">{candidate.mission || 'No mission provided.'}</Text>
                   </Box>
                 </Box>
@@ -316,13 +318,14 @@ export default function DashboardPage() {
                 <Button
                   mt={6}
                   w="full"
-                  colorPalette="teal"
+                  bg="#F32C9E"
+                  color="white"
                   size="lg"
                   loading={isSubmitting === candidate.id}
                   disabled={isSubmitting !== null}
                   onClick={() => handleVote(candidate.id, candidate.name)}
-                  _hover={{ transform: 'scale(1.02)' }}
-                  transition="transform 0.2s"
+                  _hover={{ bg: 'pink.600', transform: 'scale(1.02)' }}
+                  transition="all 0.2s"
                 >
                   <Icon icon="ph:check-circle-bold" />
                   {isSubmitting === candidate.id ? 'Casting Vote...' : 'Vote for ' + candidate.name.split(' ')[0]}
@@ -341,16 +344,16 @@ export default function DashboardPage() {
   const showResults = Boolean((votingStatus?.hasEnded || (hasVoted && votingStatus?.is_live_score_enabled)) && results && results.length > 0);
 
   return (
-    <Box minH="100vh" bg="gray.900" color="white" display="flex" flexDir="column">
+    <Box minH="100vh" bg="transparent" color="white" display="flex" flexDir="column">
       <Box flex="1" p={{ base: 4, md: 8 }}>
       <VStack gap={8} maxW={showResults ? "6xl" : "4xl"} mx="auto" align="stretch" transition="max-width 0.3s ease">
         
         {/* Header Header */}
-        <HStack w="full" justify="space-between" bg="gray.800" p={6} borderRadius="xl" border="1px solid" borderColor="teal.800" flexDir={{ base: 'column', sm: 'row' }} gap={4}>
+        <HStack w="full" justify="space-between" bg="rgba(18, 18, 18, 0.6)" backdropFilter="blur(20px)" p={6} borderRadius="xl" border="1px solid" borderColor="#F32C9E" flexDir={{ base: 'column', sm: 'row' }} gap={4}>
           <VStack align="start" gap={1}>
             <HStack>
-              <Icon icon="ph:house-bold" fontSize="32px" color="#4FD1C5" />
-              <Heading size="lg" color="teal.300">Voter Homepage</Heading>
+              <Icon icon="ph:house-bold" fontSize="32px" color="#39C5BB" />
+              <Heading size="lg" color="#F32C9E">Voter Homepage</Heading>
             </HStack>
             <Text color="gray.400" ml={1}>Welcome, NIM: <Text as="span" fontWeight="bold" color="white">{voterNim}</Text></Text>
           </VStack>
@@ -362,7 +365,7 @@ export default function DashboardPage() {
         <SimpleGrid columns={{ base: 1, lg: showResults ? 2 : 1 }} gap={8} alignItems="start" w="full">
           <VStack gap={8} align="stretch" w="full">
             {/* Election Status Card */}
-            <Card.Root bg="gray.800" borderColor="gray.700" borderWidth="1px">
+            <Card.Root bg="rgba(18, 18, 18, 0.6)" backdropFilter="blur(20px)" borderColor="#39C5BB" borderWidth="1px">
               <Card.Body>
                 <VStack align="center" textAlign="center" gap={4}>
                   {votingStatus?.isActive ? (
@@ -375,7 +378,7 @@ export default function DashboardPage() {
                   
                   <Heading size="xl" color="white">{votingStatus?.title || 'TEC Election'}</Heading>
                   
-                  <Badge colorPalette={votingStatus?.isActive ? 'teal' : votingStatus?.hasEnded ? 'orange' : 'blue'} size="lg" px={3} py={1} borderRadius="md">
+                  <Badge bg={votingStatus?.isActive ? '#F32C9E' : votingStatus?.hasEnded ? 'orange.500' : 'blue.500'} color="white" size="lg" px={3} py={1} borderRadius="md">
                     {votingStatus?.isActive ? 'VOTING IS OPEN' : votingStatus?.hasEnded ? 'VOTING CONCLUDED' : 'UPCOMING ELECTION'}
                   </Badge>
 
@@ -396,10 +399,10 @@ export default function DashboardPage() {
 
             {/* Action / Status Card */}
             {votingStatus?.isActive && !hasVoted && (
-              <Card.Root bg="teal.900" borderColor="teal.600" borderWidth="1px" animation="pulse 2s infinite">
+              <Card.Root bg="rgba(243, 44, 158, 0.15)" backdropFilter="blur(15px)" borderColor="#F32C9E" borderWidth="1px" animation="pulse 2s infinite">
                 <Card.Body textAlign="center" py={8}>
                   <Heading size="md" color="white" mb={4}>You are eligible to vote!</Heading>
-                  <Button colorPalette="teal" size="lg" px={8} py={6} fontSize="xl" onClick={handleEnterVotingBooth}>
+                  <Button bg="#F32C9E" color="white" size="lg" px={8} py={6} fontSize="xl" onClick={handleEnterVotingBooth} _hover={{ bg: 'pink.600' }}>
                     <Icon icon="ph:door-open-bold" /> Enter Voting Booth
                   </Button>
                 </Card.Body>

@@ -32,6 +32,31 @@ const app = new Elysia({
     credentials: true,
   }))
   
+  // Global Cloudflare Workers Rate Limiting
+  .onBeforeHandle(async ({ request, set }) => {
+    const workerEnv = cloudflareEnvContext.getStore() as any;
+    if (workerEnv && workerEnv.RATE_LIMITER) {
+      // Determine the unique key: Use Authorization header if logged in, else fallback to IP
+      const authHeader = request.headers.get('Authorization');
+      const cfIp = request.headers.get('cf-connecting-ip');
+      const forwarded = request.headers.get('x-forwarded-for');
+      const realIp = request.headers.get('x-real-ip');
+      const ipAddress = cfIp || forwarded?.split(',')[0]?.trim() || realIp || '127.0.0.1';
+      
+      const userKey = authHeader || ipAddress;
+      
+      const { success } = await workerEnv.RATE_LIMITER.limit({ key: userKey });
+      
+      if (!success) {
+        set.status = 429;
+        return { 
+          success: false, 
+          error: "Too many requests. Please wait a minute before trying again." 
+        };
+      }
+    }
+  })
+  
   // Manual static file serving for uploaded photos
   .get('/static/*', async ({ params }) => {
     const requestedPath = (params as { '*': string })['*'];

@@ -18,7 +18,7 @@ A bleeding-edge Cloudflare Serverless backend API for the Tarumanagara English C
 - ⚡ **Hyperdrive Edge Caching** - Neon Postgres queries are automatically pooled and cached globally at Cloudflare's edge
 - 🔐 **JWT Authentication** - Separate tokens for voters and admins
 - 🔒 **PBKDF2 Passwords** - Secure password hashing using native V8 Web Crypto API
-- 🛡️ **Edge Security & Rate Limiting** - Cloudflare Native KV for 0ms DDoS and brute-force protection
+- 🛡️ **Edge Security & Rate Limiting** - Cloudflare Workers Rate Limiting Bindings & KV for 0ms DDoS and brute-force protection
 - 🤖 **Captcha Fallback System** - Multi-provider Captcha (Google reCAPTCHA, hCaptcha, Cloudflare Turnstile) support
 - 🗳️ **Secure Voting** - Atomic Drizzle transactions with double-vote prevention
 - 💻 **Server-Side Fingerprinting** - Uses `cf-connecting-ip`, ASN, and TLS ciphers acting as the absolute source of truth to detect split-tunnel VPNs.
