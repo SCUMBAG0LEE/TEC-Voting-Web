@@ -36,6 +36,7 @@
     "typescript": "latest",
     "typescript-eslint": "latest",
     "vite": "latest",
-    "vite-plugin-pwa": "latest"
+    "vite-plugin-pwa": "latest",
+    "wrangler": "latest"
   }
 }
