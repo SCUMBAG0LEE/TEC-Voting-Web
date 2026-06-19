@@ -24,9 +24,25 @@ const app = new Elysia({
     port: config.server.port,
   },
 })
-  // CORS configuration
+  // CORS configuration - Evaluated dynamically on every incoming request
   .use(cors({
-    origin: config.cors.origin,
+    origin: (request) => {
+      // 1. Fetch your live variables from process.env at runtime
+      // Fallback to local development port if no specific origin is configured
+      const rawAllowedOrigins = process.env.CORS_ORIGIN || 'http://localhost:5173';
+      
+      // 2. Split by comma to support multiple environments cleanly
+      const allowedOrigins = rawAllowedOrigins.split(',').map(o => o.trim());
+      
+      // 3. Extract the origin sending the request
+      const currentOrigin = request.headers.get('origin');
+      
+      // 4. Validate if the visitor is allowed through
+      if (currentOrigin && allowedOrigins.includes(currentOrigin)) {
+        return true;
+      }
+      return false;
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
