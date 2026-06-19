@@ -12,7 +12,6 @@ import type { ElectionHistoryParsed, CandidateResult } from '../types';
 import { getVoteTally } from './candidate.service';
 import { getTotalVoters, getVotedCount } from './voter.service';
 import { getVotingConfig } from './voting.service';
-import * as schema from '../db/schema';
 
 /**
  * Get all election history records

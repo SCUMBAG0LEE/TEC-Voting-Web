@@ -8,7 +8,7 @@
 import { db } from '../db';
 import { voting } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import type { VotingConfig, VotingStatus } from '../types';
+import type { VotingStatus } from '../types';
 import { getOrSetCache, invalidateCache } from './cache.service';
 
 const CACHE_KEYS = {

@@ -318,7 +318,52 @@ async function getSpeechVoices(): Promise<string[]> {
   });
 }
 
-let cachedDeviceData: Record<string, unknown> | null = null;
+export interface DeviceData {
+  userAgent: string;
+  platform: string;
+  language: string;
+  languages: string[];
+  screenResolution: string;
+  colorDepth: number;
+  devicePixelRatio: number;
+  timezone: string;
+  timezoneOffset: number;
+  hardwareConcurrency: number;
+  deviceMemory: number | null;
+  orientation: string;
+  batteryLevel: number | null;
+  isCharging: boolean | null;
+  adBlockerActive: boolean;
+  maxTouchPoints: number;
+  webglRenderer: string;
+  webglVendor: string;
+  localIp: string;
+  publicIp: string;
+  incognito: boolean;
+  referrer: string;
+  hostname: string;
+  clientHintsBrands: string;
+  clientHintsMobile: boolean;
+  canvasHash: string;
+  audioHash: string;
+  mathHash: string;
+  cookieEnabled: boolean;
+  doNotTrack: string | null;
+  webdriver: boolean;
+  pdfViewerEnabled: boolean;
+  connectionType: string | null;
+  connectionDownlink: number | null;
+  saveData: boolean;
+  viewportWidth: number;
+  viewportHeight: number;
+  prefersDark: boolean;
+  prefersReducedMotion: boolean;
+  fonts: string[];
+  plugins: string[];
+  speechVoices: string[];
+}
+
+let cachedDeviceData: DeviceData | null = null;
 
 /**
  * Gathers various device and browser properties.
@@ -327,29 +372,30 @@ let cachedDeviceData: Record<string, unknown> | null = null;
 async function getDeviceData() {
   // If we already have a fingerprint, intelligently retry any fields that failed the first time
   if (cachedDeviceData) {
+    const data = cachedDeviceData;
     const retries: Promise<void>[] = [];
 
-    if (cachedDeviceData.publicIp === 'unknown') {
-      retries.push(getPublicIP().then(ip => { cachedDeviceData.publicIp = ip ?? 'unknown'; }));
+    if (data.publicIp === 'unknown') {
+      retries.push(getPublicIP().then(ip => { data.publicIp = ip ?? 'unknown'; }));
     }
     
-    if (['unknown', 'unsupported', 'error'].includes(cachedDeviceData.localIp)) {
-      retries.push(getLocalIP().then(ip => { cachedDeviceData.localIp = ip ?? 'unknown'; }));
+    if (['unknown', 'unsupported', 'error'].includes(data.localIp)) {
+      retries.push(getLocalIP().then(ip => { data.localIp = ip ?? 'unknown'; }));
     }
 
-    if (cachedDeviceData.batteryLevel === null) {
+    if (data.batteryLevel === null) {
       retries.push(getBatteryInfo().then(b => {
-        cachedDeviceData.batteryLevel = b.level ?? null;
-        cachedDeviceData.isCharging = b.charging ?? null;
+        data.batteryLevel = b.level ?? null;
+        data.isCharging = b.charging ?? null;
       }));
     }
 
-    if (['audio-error', 'no-audio-api', 'unknown'].includes(cachedDeviceData.audioHash)) {
-      retries.push(getAudioFingerprint().then(hash => { cachedDeviceData.audioHash = hash ?? 'unknown'; }));
+    if (['audio-error', 'no-audio-api', 'unknown'].includes(data.audioHash)) {
+      retries.push(getAudioFingerprint().then(hash => { data.audioHash = hash ?? 'unknown'; }));
     }
 
-    if (!cachedDeviceData.speechVoices || cachedDeviceData.speechVoices.length === 0) {
-      retries.push(getSpeechVoices().then(voices => { cachedDeviceData.speechVoices = voices || []; }));
+    if (!data.speechVoices || data.speechVoices.length === 0) {
+      retries.push(getSpeechVoices().then(voices => { data.speechVoices = voices || []; }));
     }
     
     // Execute all needed retries concurrently for maximum performance
@@ -357,7 +403,7 @@ async function getDeviceData() {
       await Promise.all(retries);
     }
 
-    return cachedDeviceData;
+    return data;
   }
 
   const webgl = getWebGLData();

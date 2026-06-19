@@ -6,8 +6,6 @@
  */
 
 import { Elysia, t } from 'elysia';
-import { db } from '../db';
-import { voting } from '../db/schema';
 import { jwtPlugin, generateAdminToken } from '../middleware/auth';
 
 import { getAdminFromRequest, requireAdmin } from '../utils';
@@ -19,7 +17,6 @@ import {
   bulkAddVotersSchema,
   idParamSchema,
   nimParamSchema,
-  paginationSchema,
 } from '../types/schemas';
 import { verifyAdminCredentials, getDashboardStats } from '../services/admin.service';
 import { 
@@ -28,7 +25,6 @@ import {
   addVotersBulk, 
   deleteVoter, 
   resetAllVoters,
-  getTotalVoters,
   getVotedCount,
 } from '../services/voter.service';
 import { 
@@ -458,7 +454,7 @@ export const adminRoutes = new Elysia({ aot: false, prefix: '/admin' })
     if (authError) return authError;
     
     const saveToR2 = body?.saveToR2 === true;
-    if (!saveToR2 && admin.role !== 'owner') {
+    if (!saveToR2 && admin!.role !== 'owner') {
       set.status = 403;
       return { success: false, error: 'Unauthorized: Only system owners can download backups directly.' };
     }
@@ -474,7 +470,7 @@ export const adminRoutes = new Elysia({ aot: false, prefix: '/admin' })
       }
       const filename = `backups/tec-voting-backup-${Date.now()}.json`;
       const buffer = new TextEncoder().encode(backupJson);
-      await uploadToR2(workerEnv, filename, buffer, 'application/json');
+      await uploadToR2(workerEnv, filename, buffer.buffer as ArrayBuffer, 'application/json');
       return { success: true, message: `Backup successfully saved to R2 as ${filename}` };
     }
 
@@ -494,7 +490,7 @@ export const adminRoutes = new Elysia({ aot: false, prefix: '/admin' })
     const authError = requireAdmin(admin, set);
     if (authError) return authError;
     
-    if (admin.role !== 'owner') {
+    if (admin!.role !== 'owner') {
       set.status = 403;
       return { success: false, error: 'Unauthorized: Only system owners can perform this action.' };
     }

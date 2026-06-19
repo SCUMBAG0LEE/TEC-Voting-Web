@@ -12,7 +12,7 @@ import { db } from '../db';
 import { device_votes } from '../db/schema';
 import { eq } from 'drizzle-orm';
 import { voterLoginSchema, voteSchema } from '../types/schemas';
-import { getVoterFromRequest, requireVoter } from '../utils';
+import { getVoterFromRequest } from '../utils';
 import {
   findVoterByNim,
   castVote,

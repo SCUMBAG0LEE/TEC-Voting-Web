@@ -9,7 +9,6 @@ import { db } from '../db';
 import { voters, candidates } from '../db/schema';
 import { eq, sql, like, asc, desc } from 'drizzle-orm';
 import { registerDeviceVote } from './device.service';
-import type { Voter } from '../types';
 
 /**
  * Find voter by NIM

@@ -22,7 +22,7 @@ interface DashboardCandidate {
 interface VoterVotingStatus {
   isActive: boolean;
   hasEnded: boolean;
-  is_live_score_enabled: boolean;
+  is_live_score_enabled: boolean | undefined;
   title: string;
   startDate: string;
   endDate: string;
@@ -55,14 +55,14 @@ export default function DashboardPage() {
     setIsLoading(true);
     try {
       const meRes = await api.voter.me.get({ $headers: { Authorization: `Bearer ${token}` } });
-      if (meRes.data?.success) {
+      if (meRes.data?.success && meRes.data.data) {
         setHasVoted(meRes.data.data.hasVoted);
         setVoterNim(meRes.data.data.nim);
-        setVotingStatus(meRes.data.data.votingStatus);
+        setVotingStatus(meRes.data.data.votingStatus as VoterVotingStatus);
 
         if (meRes.data.data.hasVoted && (meRes.data.data.votingStatus?.hasEnded || meRes.data.data.votingStatus?.is_live_score_enabled)) {
           const resultsRes = await api.voter.results.get({ $headers: { Authorization: `Bearer ${token}` } });
-          if (resultsRes.data?.success) {
+          if (resultsRes.data?.success && resultsRes.data.data) {
             setResults(resultsRes.data.data.candidates);
             setTotalVotes(resultsRes.data.data.totalVotes);
           }
@@ -103,7 +103,7 @@ export default function DashboardPage() {
       interval = setInterval(async () => {
         try {
           const resultsRes = await api.voter.results.get({ $headers: { Authorization: `Bearer ${token}` } });
-          if (resultsRes.data?.success) {
+          if (resultsRes.data?.success && resultsRes.data.data) {
             setResults(resultsRes.data.data.candidates);
             setTotalVotes(resultsRes.data.data.totalVotes);
           }
@@ -126,7 +126,7 @@ export default function DashboardPage() {
       });
 
       if (!verifyRes.data?.success) {
-        alert(verifyRes.error?.value?.error || verifyRes.error?.value?.message || 'This device has already been used to vote.');
+        alert((verifyRes.error?.value as unknown as Record<string, string>)?.error || (verifyRes.error?.value as unknown as Record<string, string>)?.message || 'This device has already been used to vote.');
         setIsLoading(false);
         return;
       }
@@ -134,10 +134,10 @@ export default function DashboardPage() {
       // 2. Fetch Candidates if device is clean
       const candRes = await api.voter.candidates.get({ $headers: { Authorization: `Bearer ${token}` } });
       if (candRes.data?.success) {
-        setCandidates(candRes.data.data.candidates || candRes.data.data);
+        setCandidates(((candRes.data.data as Record<string, unknown>).candidates || candRes.data.data) as DashboardCandidate[]);
         setView('vote');
       } else {
-        alert(candRes.error?.value?.error || candRes.error?.value?.message || 'Could not load candidates.');
+        alert((candRes.error?.value as unknown as Record<string, string>)?.error || (candRes.error?.value as unknown as Record<string, string>)?.message || 'Could not load candidates.');
       }
     } catch {
       alert('Network error while entering voting booth.');
@@ -157,7 +157,8 @@ export default function DashboardPage() {
       const res = await api.voter.vote.post({ 
         candidateId,
         fingerprint,
-        deviceInfo,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        deviceInfo: deviceInfo as any,
         $headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -170,7 +171,7 @@ export default function DashboardPage() {
         api.voter.status.get().then(s => {
           if (s.data?.success && s.data.data.hasEnded) {
             api.voter.results.get({ $headers: { Authorization: `Bearer ${token}` } }).then(r => {
-              if (r.data?.success) {
+              if (r.data?.success && r.data.data) {
                 setResults(r.data.data.candidates);
                 setTotalVotes(r.data.data.totalVotes);
               }
@@ -178,7 +179,7 @@ export default function DashboardPage() {
           }
         });
       } else {
-        alert(res.error?.value?.error || res.error?.value?.message || res.data?.error || 'Failed to vote. Please try again.');
+        alert((res.error?.value as unknown as Record<string, string>)?.error || (res.error?.value as unknown as Record<string, string>)?.message || res.data?.error || 'Failed to vote. Please try again.');
         setIsSubmitting(null);
       }
     } catch (err) {

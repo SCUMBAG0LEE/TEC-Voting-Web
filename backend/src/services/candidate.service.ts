@@ -7,7 +7,7 @@
 
 import { db } from '../db';
 import { candidates } from '../db/schema';
-import { eq, asc, desc, sql } from 'drizzle-orm';
+import { eq, asc, sql } from 'drizzle-orm';
 import type { CandidateCreateRequest, CandidateUpdateRequest, CandidatePublic, CandidateResult } from '../types';
 import { getOrSetCache, invalidateCache } from './cache.service';
 

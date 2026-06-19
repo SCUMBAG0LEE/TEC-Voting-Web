@@ -8,7 +8,7 @@
 import { db } from '../db';
 import { admin as adminTable } from '../db/schema';
 import { eq } from 'drizzle-orm';
-import type { Admin, AdminResponse, DashboardStats } from '../types';
+import type { AdminResponse, DashboardStats } from '../types';
 import { getTotalVoters, getVotedCount } from './voter.service';
 import { getTotalCandidates } from './candidate.service';
 import { getOrSetCache } from './cache.service';

@@ -33,7 +33,9 @@ interface TallyCandidate {
 
 interface DashboardStats {
   totalVoters: number;
-  votedCount: number;
+  votersVoted: number;
+  totalCandidates: number;
+  participationRate: number;
 }
 
 interface AdminDashboardData {
@@ -58,12 +60,12 @@ export default function AdminDashboardPage() {
         api.admin.dashboard.get({ $headers: { Authorization: `Bearer ${token}` } }),
         api.admin.me.get({ $headers: { Authorization: `Bearer ${token}` } })
       ]);
-      if (dashRes.data?.success) {
-        setData(dashRes.data.data);
+      if (dashRes.data?.success && dashRes.data.data) {
+        setData(dashRes.data.data as unknown as AdminDashboardData);
       } else if (dashRes.error?.status === 401) {
         setToken(null);
       }
-      if (meRes.data?.success) {
+      if (meRes.data?.success && meRes.data.data) {
         setIsOwner(meRes.data.data.role === 'owner');
       }
     } catch (e) {
@@ -80,12 +82,12 @@ export default function AdminDashboardPage() {
   // Silent polling for Live Admin Tally
   useEffect(() => {
     const interval = setInterval(async () => {
-      if (!token) return;
+      if (!token || document.visibilityState !== 'visible') return;
       try {
         const dashRes = await api.admin.dashboard.get({ $headers: { Authorization: `Bearer ${token}` } });
-        if (dashRes.data?.success) {
-          // We spread the previous state so we don't accidentally close an open modal if they are interacting
-          setData((prev) => prev ? { ...prev, ...dashRes.data.data } : dashRes.data.data);
+        if (dashRes.data?.success && 'data' in dashRes.data) {
+          const freshData = dashRes.data.data;
+          setData((prev) => prev ? { ...prev, ...(freshData as unknown as AdminDashboardData) } : (freshData as unknown as AdminDashboardData));
         }
       } catch {
         // Silent fail
@@ -159,12 +161,12 @@ export default function AdminDashboardPage() {
                 <VStack align="start">
                   <Text color="teal.100" fontSize="sm">Total Voters</Text>
                   <Heading size="2xl" color="white">{stats?.totalVoters || 0}</Heading>
-                  <Progress.Root value={((stats?.votedCount || 0) / (stats?.totalVoters || 1)) * 100} w="full" size="sm" colorPalette="teal">
+                  <Progress.Root value={((stats?.votersVoted || 0) / (stats?.totalVoters || 1)) * 100} w="full" size="sm" colorPalette="teal">
                     <Progress.Track bg="gray.700">
                       <Progress.Range bg="teal.400" />
                     </Progress.Track>
                   </Progress.Root>
-                  <Text fontSize="xs" color="teal.200">{stats?.votedCount} have voted</Text>
+                  <Text fontSize="xs" color="teal.200">{stats?.votersVoted} have voted</Text>
                 </VStack>
               </Card.Body>
             </Card.Root>
@@ -189,7 +191,7 @@ export default function AdminDashboardPage() {
 
           <Heading size="md" mb={4} color="white">Live Vote Tally</Heading>
           
-          <SimpleGrid ref={gridRef} columns={{ base: 1, md: 2, lg: tally?.length > 2 ? 3 : 2 }} gap={6}>
+          <SimpleGrid ref={gridRef} columns={{ base: 1, md: 2, lg: (tally?.length ?? 0) > 2 ? 3 : 2 }} gap={6}>
             {tally?.map((candidate) => {
               const percentage = totalVotes === 0 ? 0 : ((candidate.votes / totalVotes) * 100).toFixed(1);
               return (
@@ -202,7 +204,6 @@ export default function AdminDashboardPage() {
                             src={candidate.photo ? `${import.meta.env.VITE_API_URL}/static/${candidate.photo}` : `/default-avatar.svg`} 
                             onError={(e) => { e.currentTarget.src = `/default-avatar.svg`; }}
                             w="48px" h="48px" borderRadius="xl" objectFit="cover"
-                            fallback={<Box w="48px" h="48px" bg="gray.900" borderRadius="xl" />}
                           />
                           <VStack align="start" gap={0}>
                             <Heading size="md" color="white">Candidate {candidate.no}</Heading>
@@ -303,8 +304,8 @@ function SettingsTab({ token, votingConfig, onUpdate }: { token: string | null, 
         }));
       }
 
-      const scheduleChanged = (new Date(startDate).toISOString() !== new Date(votingConfig?.vot_start_date).toISOString()) || 
-                              (new Date(endDate).toISOString() !== new Date(votingConfig?.vot_end_date).toISOString());
+      const scheduleChanged = (new Date(startDate).toISOString() !== new Date(votingConfig?.vot_start_date || '').toISOString()) || 
+                              (new Date(endDate).toISOString() !== new Date(votingConfig?.vot_end_date || '').toISOString());
 
       if (scheduleChanged && startDate && endDate) {
         promises.push(api.admin.voting.schedule.put({ 
@@ -403,7 +404,7 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
           alert('The system has been successfully restored from the backup file.');
           onUpdate();
         } else {
-          throw new Error(res.error?.value?.message || 'Restore failed.');
+          throw new Error(String((res.error?.value as unknown as Record<string, string>)?.message || 'Restore failed.'));
         }
       } catch (err: unknown) {
         alert(`Restore Error: ${err instanceof Error ? err.message : 'Failed to parse JSON file or network error.'}`);
@@ -422,18 +423,18 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
       });
 
       if (saveToR2) {
-        if (res.data?.success) {
-          alert(res.data.message);
+        if ((res.data as Record<string, unknown>)?.success) {
+          alert((res.data as unknown as Record<string, string>).message);
         } else {
-          throw new Error(res.error?.value || 'Failed to save backup to R2');
+          throw new Error(String(res.error?.value || 'Failed to save backup to R2'));
         }
       } else {
-        const blob = await res.raw.blob();
+        const blob = await (res as unknown as { raw: Response }).raw.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         
-        const disposition = res.raw.headers.get('content-disposition');
+        const disposition = (res as unknown as { raw: Response }).raw.headers.get('content-disposition');
         let filename = `tec-voting-backup-${Date.now()}.json`;
         if (disposition && disposition.includes('attachment')) {
             const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
@@ -461,7 +462,7 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
         alert(`Voters Reset: ${res.data.message}`);
         onUpdate();
       } else {
-        throw new Error(res.error?.value?.message || 'Failed to reset voters.');
+        throw new Error(String((res.error?.value as unknown as Record<string, string>)?.message || 'Failed to reset voters.'));
       }
     } catch (e: unknown) {
       alert(`Error: ${e instanceof Error ? e.message : String(e)}`);
@@ -478,7 +479,7 @@ function DangerZoneTab({ token, onUpdate, isOwner }: { token: string | null, onU
         alert(`Tally Reset: ${res.data.message}`);
         onUpdate();
       } else {
-        throw new Error(res.error?.value?.message || 'Failed to reset tally.');
+        throw new Error(String((res.error?.value as unknown as Record<string, string>)?.message || 'Failed to reset tally.'));
       }
     } catch (e: unknown) {
       alert(`Error: ${e instanceof Error ? e.message : String(e)}`);

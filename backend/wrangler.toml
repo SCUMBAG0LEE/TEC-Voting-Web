@@ -17,15 +17,15 @@ JWT_SECRET = "REPLACE_ME_IN_CLOUDFLARE_DASHBOARD"
 # Cloudflare Hyperdrive
 # You will need to create a Hyperdrive configuration pointing to your Neon database
 # Command: bunx wrangler hyperdrive create tec-db --connection-string="postgres://user:password@endpoint.neon.tech/dbname"
-# [[hyperdrive]]
-# binding = "HYPERDRIVE"
-# id = "YOUR_HYPERDRIVE_ID_HERE"
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "YOUR_HYPERDRIVE_ID_HERE"
 
 # KV Namespace for Cache
 # Command: bunx wrangler kv:namespace create CACHE
-# [[kv_namespaces]]
-# binding = "KV_CACHE"
-# id = "YOUR_KV_NAMESPACE_ID_HERE"
+[[kv_namespaces]]
+binding = "KV_CACHE"
+id = "YOUR_KV_NAMESPACE_ID_HERE"
 
 # Cloudflare Native Rate Limiting Configuration
 # Configure WAF Rate Limiting in the Cloudflare Dashboard

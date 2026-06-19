@@ -12,17 +12,17 @@ export function initRedis(): void {
 }
 
 export async function getOrSetCache<T>(
-  key: string,
-  ttlSeconds: number,
+  _key: string,
+  _ttlSeconds: number,
   fetcher: () => Promise<T>
 ): Promise<T> {
   return await fetcher();
 }
 
-export async function invalidateCache(key: string): Promise<void> {
+export async function invalidateCache(_key: string): Promise<void> {
   // No-op
 }
 
-export async function invalidateCachePattern(pattern: string): Promise<void> {
+export async function invalidateCachePattern(_pattern: string): Promise<void> {
   // No-op
 }

@@ -12,7 +12,6 @@ import { config } from '../config';
 import * as schema from './schema';
 
 let sql: ReturnType<typeof postgres> | null = null;
-let dbInstance: ReturnType<typeof drizzle> | null = null;
 
 export type DB = ReturnType<typeof drizzle<typeof schema>>;
 

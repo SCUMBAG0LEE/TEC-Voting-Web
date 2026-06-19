@@ -1,4 +1,4 @@
-import { useState, FormEvent, useEffect } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Box, Flex, Heading, Text, Input, Button } from '@chakra-ui/react';
 import { useSetAtom } from 'jotai';
 import { useNavigate } from '@tanstack/react-router';
@@ -129,7 +129,7 @@ export default function LoginPage() {
       ...(captchaToken ? { captchaToken, captchaProvider } : {})
     });
 
-    const errObj = error?.value || data;
+    const errObj = (error?.value || data) as Record<string, string> | undefined;
 
     if (errObj?.error === 'REQUIRE_CAPTCHA') {
       setShowVoterCaptcha(true);
@@ -185,7 +185,7 @@ export default function LoginPage() {
       ...(captchaToken ? { captchaToken, captchaProvider } : {})
     });
 
-    const errObj = error?.value || data;
+    const errObj = (error?.value || data) as Record<string, string> | undefined;
 
     if (errObj?.error === 'REQUIRE_CAPTCHA') {
       setShowAdminCaptcha(true);
@@ -232,10 +232,10 @@ export default function LoginPage() {
       {/* Background Wrapper */}
       <Box 
         position="absolute" inset={0} zIndex={1}
-        bg={`url('/assets/login_bg.jpg') center/cover no-repeat, linear-gradient(135deg, #0f172a 0%, #020617 100%)`}
+        bg={`url('/assets/login_bg.jpg') center/cover no-repeat, linear-gradient(135deg, #4c0519 0%, #2e020f 100%)`}
         _after={{
           content: '""', position: 'absolute', top: 0, left: 0, w: '100%', h: '100%',
-          bg: `url('/assets/login_bg.jpg') center/cover no-repeat, linear-gradient(135deg, #4c0519 0%, #2e020f 100%)`,
+          bg: `url('/assets/login_bg.jpg') center/cover no-repeat, linear-gradient(135deg, #0f172a 0%, #020617 100%)`,
           opacity: isAdminMode ? 1 : 0,
           transition: 'opacity 1.2s ease-in-out'
         }}
@@ -288,8 +288,8 @@ export default function LoginPage() {
               transform={isAdminMode ? 'translateX(100%)' : 'translateX(0)'}
               style={{ transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}
             />
-            <Button flex={1} variant="ghost" zIndex={2} color={!isAdminMode ? '#39C5BB' : 'gray.400'} onClick={() => setIsAdminMode(false)} _hover={{ bg: 'transparent' }} _active={{ bg: 'transparent' }}>Voter</Button>
-            <Button flex={1} variant="ghost" zIndex={2} color={isAdminMode ? '#F32C9E' : 'gray.400'} onClick={() => setIsAdminMode(true)} _hover={{ bg: 'transparent' }} _active={{ bg: 'transparent' }}>Admin</Button>
+            <Button flex={1} variant="ghost" zIndex={2} color={!isAdminMode ? '#F32C9E' : 'gray.400'} onClick={() => setIsAdminMode(false)} _hover={{ bg: 'transparent' }} _active={{ bg: 'transparent' }}>Voter</Button>
+            <Button flex={1} variant="ghost" zIndex={2} color={isAdminMode ? '#39C5BB' : 'gray.400'} onClick={() => setIsAdminMode(true)} _hover={{ bg: 'transparent' }} _active={{ bg: 'transparent' }}>Admin</Button>
           </Flex>
 
           {/* Mobile Title (Crossfading) */}
@@ -324,7 +324,7 @@ export default function LoginPage() {
               <Input 
                 display="block" w="100%" mt="10px" p="12px 15px" fontSize="15px"
                 border="2px solid #4a5568" borderRadius="12px" textAlign="center" bg="#2d3748" color="white"
-                transition="all 0.3s ease" _focus={{ borderColor: '#39C5BB', boxShadow: '0 0 0 3px rgba(57, 197, 187, 0.2)', bg: '#1a202c', outline: 'none' }}
+                transition="all 0.3s ease" _focus={{ borderColor: '#F32C9E', boxShadow: '0 0 0 3px rgba(243, 44, 158, 0.2)', bg: '#1a202c', outline: 'none' }}
                 value={nim}
                 onChange={(e) => setNim(e.target.value)}
             inputMode="numeric"
@@ -343,9 +343,9 @@ export default function LoginPage() {
             <Button 
               type="submit" disabled={loadingVoter}
               display={{ base: "none", md: "block" }} mx="auto" w="260px" h="36px" borderRadius="30px" color="#fff" fontSize="15px" cursor="pointer"
-              m="0" bg="linear-gradient(135deg, #39C5BB 0%, #0d9488 100%)" textTransform="uppercase" fontWeight="bold"
+              m="0" bg="linear-gradient(135deg, #F32C9E 0%, #7B1FA2 100%)" textTransform="uppercase" fontWeight="bold"
               transition="transform 0.2s, box-shadow 0.2s"
-              _hover={{ transform: 'translateY(-2px)', boxShadow: '0 10px 20px rgba(57, 197, 187, 0.3)' }}
+              _hover={{ transform: 'translateY(-2px)', boxShadow: '0 10px 20px rgba(243, 44, 158, 0.3)' }}
               _disabled={{ opacity: 0.7, cursor: 'not-allowed', transform: 'none', boxShadow: 'none' }}
             >
               {loadingVoter ? 'LOGGING IN...' : 'LOG IN'}
@@ -396,14 +396,14 @@ export default function LoginPage() {
               </Box>
 
               <Box position="relative" w="100px" h="36px" mx="auto" bg="transparent" textTransform="uppercase" fontSize="15px" cursor="pointer" zIndex={2} overflow="hidden" onClick={() => setIsAdminMode(!isAdminMode)}
-                   _after={{ content: '""', zIndex: 2, position: 'absolute', left: 0, top: 0, w: '100%', h: '100%', border: '2px solid', borderColor: isAdminMode ? '#39C5BB' : '#F32C9E', borderRadius: '30px', transition: 'border-color 1.2s ease-in-out' }}>
+                   _after={{ content: '""', zIndex: 2, position: 'absolute', left: 0, top: 0, w: '100%', h: '100%', border: '2px solid', borderColor: isAdminMode ? '#F32C9E' : '#39C5BB', borderRadius: '30px', transition: 'border-color 1.2s ease-in-out' }}>
                 <Box position="absolute" left={0} top={0} w="100%" h="100%" display="flex" justifyContent="center" alignItems="center"
-                     color="#F32C9E" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)', transition: 'transform 1.2s ease-in-out' }}
+                     color="#39C5BB" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.85), 1px 1px 0 rgba(0,0,0,0.9)', transition: 'transform 1.2s ease-in-out' }}
                      transform={isAdminMode ? 'translateY(72px)' : 'translateY(0)'}>
                   Admin
                 </Box>
                 <Box position="absolute" left={0} top={0} w="100%" h="100%" display="flex" justifyContent="center" alignItems="center"
-                     color="#39C5BB" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)', transition: 'transform 1.2s ease-in-out' }}
+                     color="#F32C9E" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.95), 0 0 30px rgba(0,0,0,0.85), 1px 1px 0 rgba(0,0,0,0.9)', transition: 'transform 1.2s ease-in-out' }}
                      transform={isAdminMode ? 'translateY(0)' : 'translateY(-72px)'}>
                   Voter
                 </Box>
@@ -430,7 +430,7 @@ export default function LoginPage() {
                 <Input 
                   type="email" display="block" w="100%" mt="10px" p="12px 15px" fontSize="15px" h="auto"
                   border="2px solid #4a5568" borderRadius="12px" textAlign="center" bg="#2d3748" color="white"
-                  transition="all 0.3s ease" _focus={{ borderColor: '#F32C9E', boxShadow: '0 0 0 3px rgba(243, 44, 158, 0.2)', bg: '#1a202c', outline: 'none' }}
+                  transition="all 0.3s ease" _focus={{ borderColor: '#39C5BB', boxShadow: '0 0 0 3px rgba(57, 197, 187, 0.2)', bg: '#1a202c', outline: 'none' }}
                   value={email} onChange={(e) => setEmail(e.target.value)}
                   disabled={loadingAdmin}
                 />
@@ -441,7 +441,7 @@ export default function LoginPage() {
                 <Input 
                   type="password" display="block" w="100%" mt="10px" p="12px 15px" fontSize="15px" h="auto"
                   border="2px solid #4a5568" borderRadius="12px" textAlign="center" bg="#2d3748" color="white"
-                  transition="all 0.3s ease" _focus={{ borderColor: '#F32C9E', boxShadow: '0 0 0 3px rgba(243, 44, 158, 0.2)', bg: '#1a202c', outline: 'none' }}
+                  transition="all 0.3s ease" _focus={{ borderColor: '#39C5BB', boxShadow: '0 0 0 3px rgba(57, 197, 187, 0.2)', bg: '#1a202c', outline: 'none' }}
                   value={password} onChange={(e) => setPassword(e.target.value)}
                   disabled={loadingAdmin}
                   onKeyDown={(e) => {
@@ -455,9 +455,9 @@ export default function LoginPage() {
               <Button 
                 type="submit" disabled={loadingAdmin}
                 display={{ base: "none", md: "block" }} mx="auto" w="260px" h="36px" borderRadius="30px" color="#fff" fontSize="15px" cursor="pointer"
-                m="0" bg="linear-gradient(135deg, #F32C9E 0%, #7B1FA2 100%)" textTransform="uppercase" fontWeight="bold"
+                m="0" bg="linear-gradient(135deg, #39C5BB 0%, #0d9488 100%)" textTransform="uppercase" fontWeight="bold"
                 transition="transform 0.2s, box-shadow 0.2s"
-                _hover={{ transform: 'translateY(-2px)', boxShadow: '0 10px 20px rgba(243, 44, 158, 0.3)' }}
+                _hover={{ transform: 'translateY(-2px)', boxShadow: '0 10px 20px rgba(57, 197, 187, 0.3)' }}
                 _disabled={{ opacity: 0.7, cursor: 'not-allowed', transform: 'none', boxShadow: 'none' }}
               >
                 {loadingAdmin ? 'LOGGING IN...' : 'LOG IN'}
@@ -482,8 +482,8 @@ export default function LoginPage() {
               _active={{ transform: 'scale(0.98)' }}
               _hover={{ shadow: 'xl' }}
             >
-              <Box position="absolute" inset={0} bg="linear-gradient(135deg, #39C5BB 0%, #0d9488 100%)" zIndex={0} />
-              <Box position="absolute" inset={0} bg="linear-gradient(135deg, #F32C9E 0%, #7B1FA2 100%)" zIndex={1} opacity={isAdminMode ? 1 : 0} transition="opacity 0.5s ease-in-out" />
+              <Box position="absolute" inset={0} bg="linear-gradient(135deg, #F32C9E 0%, #7B1FA2 100%)" zIndex={0} />
+              <Box position="absolute" inset={0} bg="linear-gradient(135deg, #39C5BB 0%, #0d9488 100%)" zIndex={1} opacity={isAdminMode ? 1 : 0} transition="opacity 0.5s ease-in-out" />
               <Flex position="relative" zIndex={2} w="100%" h="100%" align="center" justify="center" color="#fff" fontSize="15px" textTransform="uppercase" fontWeight="bold">
                 <Box position="absolute" opacity={isAdminMode ? 0 : 1} transition="opacity 0.3s ease-in-out">
                   {loadingVoter ? 'LOGGING IN...' : 'LOG IN'}

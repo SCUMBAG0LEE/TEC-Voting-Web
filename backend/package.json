@@ -16,7 +16,6 @@
     "@elysiajs/cors": "latest",
     "@elysiajs/jwt": "latest",
     "@elysiajs/swagger": "latest",
-    "@upstash/redis": "latest",
     "drizzle-orm": "latest",
     "elysia": "latest",
     "postgres": "latest",

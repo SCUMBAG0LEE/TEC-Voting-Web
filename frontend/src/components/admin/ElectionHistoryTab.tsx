@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { animate, stagger } from 'animejs';
 import { 
   Box, 
   VStack, 
@@ -23,8 +24,8 @@ interface HistoryRecord {
   winner_name: string;
   winner_photo: string | null;
   winner_nim: string;
-  winner_major: string;
-  winner_batch: number;
+  winner_major: string | null;
+  winner_batch: number | null;
   winner_votes: number;
   total_voters: number;
   voters_participated: number;
@@ -57,19 +58,13 @@ export function ElectionHistoryTab({ token }: { token: string | null }) {
 
   useEffect(() => {
     if (!isLoading && animRef.current) {
-      import('animejs').then((animeModule) => {
-        if (!animRef.current) return;
-        const { animate, stagger } = animeModule;
-        if (typeof animate === 'function') {
-          animate(Array.from(animRef.current.children), {
-            y: [20, 0],
-            opacity: [0, 1],
-            duration: 600,
-            delay: typeof stagger === 'function' ? stagger(100) : 0,
-            ease: 'outExpo'
-          });
-        }
-      }).catch(console.error);
+      animate(Array.from(animRef.current.children), {
+        y: [20, 0],
+        opacity: [0, 1],
+        duration: 600,
+        delay: stagger(100),
+        ease: 'outExpo'
+      });
     }
   }, [isLoading]);
 
@@ -139,8 +134,7 @@ export function ElectionHistoryTab({ token }: { token: string | null }) {
                         w="100px" 
                         h="100px" 
                         objectFit="cover" 
-                        borderRadius="xl" 
-                        fallback={<Box w="100px" h="100px" bg="gray.800" borderRadius="xl" />}
+                        borderRadius="xl"
                       />
                       <VStack align="start" gap={1} flex={1}>
                         <Badge colorPalette={record.winner_name.startsWith('Tie') ? 'gray' : 'yellow'} variant="solid" mb={1}>

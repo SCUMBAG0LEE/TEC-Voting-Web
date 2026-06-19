@@ -12,7 +12,7 @@ const isDev = process.env.NODE_ENV !== 'production';
 
 // Warn about missing security-critical env vars in production
 if (!isDev) {
-  const requiredVars = ['DB_PASSWORD', 'JWT_SECRET', 'UPSTASH_REDIS_REST_URL', 'UPSTASH_REDIS_REST_TOKEN'];
+  const requiredVars = ['DB_PASSWORD', 'JWT_SECRET'];
   const missing = requiredVars.filter(v => !process.env[v]);
   if (missing.length > 0) {
     console.warn(`⚠️  WARNING: Missing critical environment variables in production: ${missing.join(', ')}`);
@@ -56,13 +56,6 @@ export const config = {
     };
   },
   
-  // Upstash Redis (For Rate Limiting)
-  get upstash() {
-    return {
-      url: process.env.UPSTASH_REDIS_REST_URL || '',
-      token: process.env.UPSTASH_REDIS_REST_TOKEN || '',
-    };
-  },
   
   // Captcha
   get captcha() {

@@ -12,7 +12,6 @@ import { getDb, dbContext } from './db/index';
 import { testConnection } from './db/index';
 import { cloudflareEnvContext } from './utils/context';
 import { getFromR2 } from './services/storage.service';
-import { initRedis } from './services/cache.service';
 import { voterRoutes, adminRoutes, candidateRoutes, uploadRoutes } from './routes';
 import process from 'node:process';
 
@@ -34,7 +33,7 @@ const app = new Elysia({
   }))
   
   // Manual static file serving for uploaded photos
-  .get('/static/*', async ({ params, env }) => {
+  .get('/static/*', async ({ params }) => {
     const requestedPath = (params as { '*': string })['*'];
     const decodedPath = decodeURIComponent(requestedPath);
     
@@ -55,12 +54,13 @@ const app = new Elysia({
     const headers = new Headers();
     object.writeHttpMetadata(headers);
     headers.set('etag', object.httpEtag);
+    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
 
     return new Response(object.body, { headers });
   })
   
   // DEBUG ROUTE: List R2 bucket contents
-  .get('/debug-r2', async ({ env }) => {
+  .get('/debug-r2', async () => {
     const workerEnv = cloudflareEnvContext.getStore() as any;
     if (!workerEnv || !workerEnv.STORAGE_BUCKET) {
       return { success: false, error: 'No R2 bucket bound' };
@@ -156,7 +156,7 @@ export type App = typeof app;
 // so all our lazy getters and database proxies can read them.
 // We also extract Hyperdrive connection string and inject it into AsyncLocalStorage.
 export default {
-  fetch(request: Request, env: any, ctx: any) {
+  fetch(request: Request, env: any, _ctx: any) {
     if (env) {
       // Polyfill process.env for Node.js compatibility across the app
       Object.assign(process.env, env);
@@ -172,7 +172,7 @@ export default {
     return cloudflareEnvContext.run(env, () => {
       return dbContext.run(dbInstance, async () => {
         try {
-          return await app.fetch(request, env, ctx);
+          return await app.fetch(request);
         } finally {
           // Clean up connection after request ends to prevent memory/socket leaks
           await sql.end();

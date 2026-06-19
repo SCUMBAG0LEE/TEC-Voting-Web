@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useReducer, useCallback } from 'react';
+import { animate, stagger } from 'animejs';
 import {
   Box, SimpleGrid, Heading, Text, VStack, Button, HStack, Card, Input, Textarea, Image
 } from '@chakra-ui/react';
@@ -10,10 +11,10 @@ interface Candidate {
   nim: string;
   major: string;
   batch: number;
-  vision: string;
-  mission: string;
+  vision: string | null;
+  mission: string | null;
   photo: string | null;
-  votes?: number;
+  votes?: number | null;
 }
 
 type FormState = Omit<Candidate, 'id' | 'votes'>;
@@ -77,19 +78,13 @@ export function CandidateManagementTab({ token }: { token: string | null }) {
   const animRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (candidates.length > 0 && animRef.current) {
-      import('animejs').then((animeModule) => {
-        if (!animRef.current) return;
-        const { animate, stagger } = animeModule;
-        if (typeof animate === 'function') {
-          animate(Array.from(animRef.current.children), {
-            y: [20, 0],
-            opacity: [0, 1],
-            duration: 500,
-            delay: typeof stagger === 'function' ? stagger(100) : 0,
-            ease: 'outExpo'
-          });
-        }
-      }).catch(console.error);
+      animate(Array.from(animRef.current.children), {
+        y: [20, 0],
+        opacity: [0, 1],
+        duration: 500,
+        delay: stagger(100),
+        ease: 'outExpo'
+      });
     }
   }, [candidates]);
 
@@ -177,7 +172,7 @@ export function CandidateManagementTab({ token }: { token: string | null }) {
       dispatch({ type: 'RESET', payload: null });
       fetchCandidates();
     } catch (err) {
-      alert("An error occurred: " + (err.message || "Please try again."));
+      alert("An error occurred: " + (err instanceof Error ? err.message : "Please try again."));
     }
     setLoading(false);
   };
@@ -240,11 +235,11 @@ export function CandidateManagementTab({ token }: { token: string | null }) {
               </HStack>
               <Box>
                 <Text fontSize="sm" color="gray.400" mb={1}>Vision</Text>
-                <Textarea value={formState.vision} onChange={e => dispatch({ type: 'SET_FIELD', payload: { field: 'vision', value: e.target.value } })} bg="gray.900" color="white" borderColor="gray.600" rows={3} />
+                <Textarea value={formState.vision ?? ''} onChange={e => dispatch({ type: 'SET_FIELD', payload: { field: 'vision', value: e.target.value } })} bg="gray.900" color="white" borderColor="gray.600" rows={3} />
               </Box>
               <Box>
                 <Text fontSize="sm" color="gray.400" mb={1}>Mission</Text>
-                <Textarea value={formState.mission} onChange={e => dispatch({ type: 'SET_FIELD', payload: { field: 'mission', value: e.target.value } })} bg="gray.900" color="white" borderColor="gray.600" rows={5} />
+                <Textarea value={formState.mission ?? ''} onChange={e => dispatch({ type: 'SET_FIELD', payload: { field: 'mission', value: e.target.value } })} bg="gray.900" color="white" borderColor="gray.600" rows={5} />
               </Box>
               <Box>
                 <Text fontSize="sm" color="gray.400" mb={1}>Photo</Text>
@@ -279,7 +274,7 @@ export function CandidateManagementTab({ token }: { token: string | null }) {
                   <Text fontSize="xs" color="gray.400">Votes: {c.votes || 0}</Text>
                 </Box>
               </HStack>
-              <Text fontSize="sm" color="gray.300" noOfLines={2} mb={2}><b>Vision:</b> {c.vision}</Text>
+              <Text fontSize="sm" color="gray.300" lineClamp={2} mb={2}><b>Vision:</b> {c.vision}</Text>
               
               <HStack mt={4} justify={{ base: "space-between", sm: "flex-end" }} flexWrap="wrap">
                 <Button size="sm" color="#39C5BB" borderColor="#39C5BB" variant="outline" _hover={{ bg: "rgba(57, 197, 187, 0.1)" }} onClick={() => openEdit(c)}>Edit</Button>

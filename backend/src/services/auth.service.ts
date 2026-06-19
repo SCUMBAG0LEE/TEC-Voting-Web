@@ -6,15 +6,17 @@
  */
 
 import { config } from '../config';
-import { Redis } from '@upstash/redis/cloudflare';
+import { cloudflareEnvContext } from '../utils/context';
 
 const EXPIRY_SECONDS = 15 * 60; // 15 minutes
 
-function getRedis() {
-  return new Redis({
-    url: config.upstash.url,
-    token: config.upstash.token,
-  });
+function getKV() {
+  const env = cloudflareEnvContext.getStore() as any;
+  if (!env || !env.KV_CACHE) {
+    console.warn('KV_CACHE binding not found. Ensure it is configured in wrangler.toml or Cloudflare dashboard.');
+    return null;
+  }
+  return env.KV_CACHE;
 }
 
 /**
@@ -63,11 +65,13 @@ export async function verifyCaptcha(token: string, ip: string, provider: 'recapt
  */
 export async function getFailedAttempts(ip: string): Promise<number> {
   try {
-    const count = await getRedis().get<number>(`auth:failed_attempts:${ip}`);
-    return count || 0;
+    const kv = getKV();
+    if (!kv) return 0;
+    const val = await kv.get(`auth:failed_attempts:${ip}`);
+    return val ? parseInt(val, 10) : 0;
   } catch (error) {
-    console.error('[Redis Error] Failed to get attempts:', error);
-    return 0; // Fallback to 0 if Redis fails
+    console.error('[KV Error] Failed to get attempts:', error);
+    return 0; // Fallback to 0 if KV fails
   }
 }
 
@@ -76,18 +80,19 @@ export async function getFailedAttempts(ip: string): Promise<number> {
  */
 export async function incrementFailedAttempts(ip: string): Promise<number> {
   try {
-    const redis = getRedis();
+    const kv = getKV();
+    if (!kv) return 1;
     const key = `auth:failed_attempts:${ip}`;
     
-    // OPTIMIZATION: Use Upstash Pipelining to send INCR and EXPIRE in a single HTTP round-trip
-    const p = redis.pipeline();
-    p.incr(key);
-    p.expire(key, EXPIRY_SECONDS);
-    const results = await p.exec();
+    // Cloudflare KV does not have native atomic INCR, so we read -> increment -> write.
+    // For login rate limiting, eventual consistency is perfectly fine.
+    const current = await getFailedAttempts(ip);
+    const next = current + 1;
+    await kv.put(key, next.toString(), { expirationTtl: EXPIRY_SECONDS });
     
-    return results[0] as number;
+    return next;
   } catch (error) {
-    console.error('[Redis Error] Failed to increment attempts:', error);
+    console.error('[KV Error] Failed to increment attempts:', error);
     return 1;
   }
 }
@@ -98,8 +103,11 @@ export async function incrementFailedAttempts(ip: string): Promise<number> {
  */
 export async function resetFailedAttempts(ip: string): Promise<void> {
   try {
-    await getRedis().del(`auth:failed_attempts:${ip}`);
+    const kv = getKV();
+    if (kv) {
+      await kv.delete(`auth:failed_attempts:${ip}`);
+    }
   } catch (error) {
-    console.error('[Redis Error] Failed to reset attempts:', error);
+    console.error('[KV Error] Failed to reset attempts:', error);
   }
 }

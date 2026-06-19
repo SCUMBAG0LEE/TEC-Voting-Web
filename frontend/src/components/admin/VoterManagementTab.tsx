@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { animate, stagger } from 'animejs';
 import { 
   Box, 
   VStack, 
@@ -21,7 +22,7 @@ import { api } from '../../api';
 interface Voter {
   no: number;
   nim: string;
-  vote: boolean;
+  vote: boolean | null;
 }
 
 export function VoterManagementTab({ token }: { token: string | null }) {
@@ -187,19 +188,13 @@ export function VoterManagementTab({ token }: { token: string | null }) {
   const animRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (animRef.current) {
-      import('animejs').then((animeModule) => {
-        if (!animRef.current) return;
-        const { animate, stagger } = animeModule;
-        if (typeof animate === 'function') {
-          animate(Array.from(animRef.current.children), {
-            y: [20, 0],
-            opacity: [0, 1],
-            duration: 600,
-            delay: typeof stagger === 'function' ? stagger(100) : 0,
-            ease: 'outExpo'
-          });
-        }
-      }).catch(console.error);
+      animate(Array.from(animRef.current.children), {
+        y: [20, 0],
+        opacity: [0, 1],
+        duration: 600,
+        delay: stagger(100),
+        ease: 'outExpo'
+      });
     }
   }, []);
 
