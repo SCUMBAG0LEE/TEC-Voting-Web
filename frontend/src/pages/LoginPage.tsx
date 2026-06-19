@@ -395,14 +395,16 @@ export default function LoginPage() {
                 <Text fontSize="14px" lineHeight="1.5" color="#e2e8f0" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.9)' }}>Switch to voter login</Text>
               </Box>
 
-              <Box position="relative" w="100px" h="36px" mx="auto" bg="transparent" color="#fff" textTransform="uppercase" fontSize="15px" cursor="pointer" zIndex={2} overflow="hidden" onClick={() => setIsAdminMode(!isAdminMode)}
-                   _after={{ content: '""', zIndex: 2, position: 'absolute', left: 0, top: 0, w: '100%', h: '100%', border: '2px solid #fff', borderRadius: '30px' }}>
+              <Box position="relative" w="100px" h="36px" mx="auto" bg="transparent" textTransform="uppercase" fontSize="15px" cursor="pointer" zIndex={2} overflow="hidden" onClick={() => setIsAdminMode(!isAdminMode)}
+                   _after={{ content: '""', zIndex: 2, position: 'absolute', left: 0, top: 0, w: '100%', h: '100%', border: '2px solid', borderColor: isAdminMode ? '#39C5BB' : '#F32C9E', borderRadius: '30px', transition: 'border-color 1.2s ease-in-out' }}>
                 <Box position="absolute" left={0} top={0} w="100%" h="100%" display="flex" justifyContent="center" alignItems="center"
-                     transform={isAdminMode ? 'translateY(72px)' : 'translateY(0)'} style={{ transition: 'transform 1.2s ease-in-out' }}>
+                     color="#F32C9E" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)', transition: 'transform 1.2s ease-in-out' }}
+                     transform={isAdminMode ? 'translateY(72px)' : 'translateY(0)'}>
                   Admin
                 </Box>
                 <Box position="absolute" left={0} top={0} w="100%" h="100%" display="flex" justifyContent="center" alignItems="center"
-                     transform={isAdminMode ? 'translateY(0)' : 'translateY(-72px)'} style={{ transition: 'transform 1.2s ease-in-out' }}>
+                     color="#39C5BB" style={{ textShadow: '0 2px 10px rgba(0,0,0,0.95), 0 0 20px rgba(0,0,0,0.8)', transition: 'transform 1.2s ease-in-out' }}
+                     transform={isAdminMode ? 'translateY(0)' : 'translateY(-72px)'}>
                   Voter
                 </Box>
               </Box>
