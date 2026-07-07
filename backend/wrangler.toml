@@ -2,8 +2,12 @@ name = "tec-voting-backend"
 main = "src/index.ts"
 compatibility_date = "2024-02-22"
 
-# We use pure Web APIs, so we do not need nodejs_compat
+# We need nodejs_compat for node:async_hooks (AsyncLocalStorage) and node:process
 compatibility_flags = [ "nodejs_compat" ]
+
+# Enable Workers Cache natively (respects Cache-Control headers for static assets)
+[cache]
+enabled = true
 
 [vars]
 NODE_ENV = "production"
