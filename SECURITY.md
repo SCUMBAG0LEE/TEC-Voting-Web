@@ -29,6 +29,7 @@ This document outlines the core security implementations within the Cloudflare s
 
 ### 5. Network Protection & Cloudflare WAF
 - **Cloudflare Native Rate Limiting & KV**: The system utilizes Cloudflare Workers Rate Limiting Bindings to drop volumetric spam while preserving shared campus IP connections via Authorization token tracking. For application-level brute-force protection (e.g., login spam), it uses Cloudflare KV to track and force Captcha verification on malicious IPs globally without draining compute resources.
+- **Preflight Exemption**: To optimize rate limiter token consumption for legitimate browsers, CORS preflight `OPTIONS` requests bypass active rate limits, preventing dual-token consumption per API operation.
 - **Strict CORS**: Cross-Origin Resource Sharing (CORS) is explicitly restricted to designated origins configured in the environment variables (e.g., `CORS_ORIGIN`). This mitigates CSRF attacks.
 - **DDoS Mitigation**: By deploying the React frontend on Cloudflare Pages and the API on Cloudflare Workers, the entire infrastructure sits behind Cloudflare's enterprise-grade DDoS protection.
 

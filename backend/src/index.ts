@@ -26,7 +26,7 @@ const app = new Elysia({
 })
   // CORS configuration - Evaluated dynamically on every incoming request
   .use(cors({
-    origin: (request) => {
+    origin: (context: any) => {
       // 1. Fetch your live variables from process.env at runtime
       // Fallback to local development port if no specific origin is configured
       const rawAllowedOrigins = process.env.CORS_ORIGIN || 'http://localhost:5173';
@@ -35,7 +35,16 @@ const app = new Elysia({
       const allowedOrigins = rawAllowedOrigins.split(',').map(o => o.trim());
       
       // 3. Extract the origin sending the request
-      const currentOrigin = request.headers.get('origin');
+      // We check both context.request (Elysia Context) and context directly (standard Request)
+      // to handle the library type mismatch safely.
+      let currentOrigin: string | null = null;
+      if (context && context.request && typeof context.request.headers?.get === 'function') {
+        currentOrigin = context.request.headers.get('origin');
+      } else if (context && context.headers && typeof context.headers.get === 'function') {
+        currentOrigin = context.headers.get('origin');
+      } else if (context && context.headers) {
+        currentOrigin = context.headers['origin'] || null;
+      }
       
       // 4. Validate if the visitor is allowed through
       if (currentOrigin && allowedOrigins.includes(currentOrigin)) {
@@ -50,6 +59,9 @@ const app = new Elysia({
   
   // Global Cloudflare Workers Rate Limiting
   .onBeforeHandle(async ({ request, set }) => {
+    // Skip rate limiting for CORS preflight requests
+    if (request.method === 'OPTIONS') return;
+    
     const workerEnv = cloudflareEnvContext.getStore() as any;
     if (workerEnv && workerEnv.RATE_LIMITER) {
       // Determine the unique key: Use Authorization header if logged in, else fallback to IP

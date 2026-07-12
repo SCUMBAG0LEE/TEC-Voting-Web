@@ -113,14 +113,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (voterError) {
-      const timer = setTimeout(() => setVoterError(''), 3000);
+      const timer = setTimeout(() => setVoterError(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [voterError]);
 
   useEffect(() => {
     if (adminError) {
-      const timer = setTimeout(() => setAdminError(''), 3000);
+      const timer = setTimeout(() => setAdminError(''), 5000);
       return () => clearTimeout(timer);
     }
   }, [adminError]);
@@ -275,7 +275,7 @@ export default function LoginPage() {
         <Box 
           w={{ base: "100%", md: "900px" }} 
           maxW={{ base: "400px", md: "100%" }} 
-          h={{ base: "480px", md: "550px" }} 
+          minH={{ base: "480px", md: "550px" }} 
           bg={{ base: "rgba(10, 10, 10, 0.6)", md: "rgba(18, 18, 18, 0.55)" }} 
           backdropFilter={{ base: "blur(20px)", md: "blur(25px)" }}
           border="1px solid rgba(255,255,255,0.05)"
@@ -356,7 +356,7 @@ export default function LoginPage() {
                   onChange={(e) => setNim(e.target.value)}
                   inputMode="numeric"
                   maxLength={9}
-                  autoComplete="off"
+                  autoComplete="username"
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleVoterLogin();
                   }}
@@ -404,6 +404,7 @@ export default function LoginPage() {
                   border="1px solid rgba(255,255,255,0.2)" borderRadius="12px" textAlign="center" bg="rgba(0,0,0,0.6)" color="white"
                   transition="all 0.3s ease" _focus={{ borderColor: '#F32C9E', boxShadow: '0 0 0 3px rgba(243, 44, 158, 0.25)', bg: 'rgba(0,0,0,0.8)', outline: 'none' }}
                   value={email} onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
                   disabled={loadingAdmin}
                 />
               </Box>
@@ -415,6 +416,7 @@ export default function LoginPage() {
                   border="1px solid rgba(255,255,255,0.2)" borderRadius="12px" textAlign="center" bg="rgba(0,0,0,0.6)" color="white"
                   transition="all 0.3s ease" _focus={{ borderColor: '#F32C9E', boxShadow: '0 0 0 3px rgba(243, 44, 158, 0.25)', bg: 'rgba(0,0,0,0.8)', outline: 'none' }}
                   value={password} onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                   disabled={loadingAdmin}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAdminLogin();
@@ -446,7 +448,7 @@ export default function LoginPage() {
             pl={{ base: 0, md: 0 }} 
             overflow={{ base: "visible", md: "visible" }}
             transform={{ base: 'none', md: isAdminMode ? 'translate3d(-640px, 0, 0)' : 'translate3d(0, 0, 0)' }}
-            pointerEvents={{ base: isAdminMode ? 'auto' : 'none', md: 'auto' }}
+            pointerEvents={{ base: 'none', md: 'auto' }}
             zIndex={{ base: 15, md: 10 }}
             style={{
               transition: desktopTransition ? 'transform 1.2s cubic-bezier(0.4, 0, 0.2, 1)' : 'transform 0s'

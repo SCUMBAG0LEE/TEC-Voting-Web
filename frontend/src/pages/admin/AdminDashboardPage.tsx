@@ -350,11 +350,11 @@ function SettingsTab({ token, votingConfig, onUpdate }: { token: string | null, 
           <HStack flexDir={{ base: 'column', sm: 'row' }} gap={4}>
             <Box flex={1} w="full">
               <Text fontSize="sm" color="gray.400" mb={1}>Start Date</Text>
-              <Input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} bg="gray.900" color="white" borderColor="gray.600" />
+              <Input type="datetime-local" value={startDate} onChange={e => setStartDate(e.target.value)} bg="gray.900" color="white" borderColor="gray.600" style={{ colorScheme: 'dark' }} />
             </Box>
             <Box flex={1} w="full">
               <Text fontSize="sm" color="gray.400" mb={1}>End Date</Text>
-              <Input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} bg="gray.900" color="white" borderColor="gray.600" />
+              <Input type="datetime-local" value={endDate} onChange={e => setEndDate(e.target.value)} bg="gray.900" color="white" borderColor="gray.600" style={{ colorScheme: 'dark' }} />
             </Box>
           </HStack>
           <Box mt={2} p={4} bg="gray.900" borderRadius="md" borderColor="gray.600" borderWidth="1px">

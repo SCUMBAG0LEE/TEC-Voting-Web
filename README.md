@@ -141,16 +141,31 @@ TECVotingWeb/
 
 ### Backend (Cloudflare Workers)
 
-```bash
-cd backend
-bunx wrangler deploy
-```
+1. Make sure to bind your database (Hyperdrive), KV, R2, and routes configurations.
+2. Run deployment:
+   ```bash
+   cd backend
+   bun run deploy
+   ```
+   *Note: If Wrangler warns that your local file differs from the dashboard configuration, check your local file to ensure you aren't accidentally replacing active production resource IDs with placeholders.*
 
 ### Frontend (Cloudflare Pages)
 
+To compile the React bundle with your production backend API URL without committing it to git, pass the env variable inline to the build command:
+
+* **Windows Command Prompt (CMD):**
+  ```cmd
+  cd frontend
+  set VITE_API_URL=https://api.voting.yourdomain.com&& bun run build
+  ```
+* **macOS / Linux / Bash:**
+  ```bash
+  cd frontend
+  VITE_API_URL="https://api.voting.yourdomain.com" bun run build
+  ```
+
+Then deploy the generated `dist` folder:
 ```bash
-cd frontend
-bun run build
 bunx wrangler pages deploy dist
 ```
 
